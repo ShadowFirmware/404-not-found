@@ -8,6 +8,8 @@ import Register from '../features/auth/Register';
 import RecuperarContrasena from '../features/auth/RecuperarContrasena';
 import IngresarCodigo from '../features/auth/IngresarCodigo';
 import NuevaContrasena from '../features/auth/NuevaContrasena';
+import PetOnboarding from '../features/pets/PetOnboarding';
+import Dashboard from '../components/dashboard/Dashboard';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +19,14 @@ export const router = createBrowserRouter([
   {
     path: '/landing',
     element: <LandingPage />,
+  },
+  {
+    path: '/pet-onboarding',
+    element: <PetOnboarding />,
+  },
+  {
+    path: '/dashboard',
+    element: <Dashboard />,
   },
   {
     element: <Layout />,

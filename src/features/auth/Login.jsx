@@ -4,6 +4,12 @@ import dashImage from '../../assets/images/dash.png';
 const Login = () => {
   const navigate = useNavigate();
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Simular login exitoso y redirigir a onboarding de mascota
+    navigate('/dashboard');
+  };
+
   return (
     <div 
       style={{ 
@@ -48,7 +54,7 @@ const Login = () => {
         </h1>
 
         {/* Formulario */}
-        <form style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <input 
             type="email" 
             placeholder="Correo electrónico" 
