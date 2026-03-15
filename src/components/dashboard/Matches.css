@@ -57,13 +57,16 @@
 
 /* MATCHES GRID */
 .matches-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  width: 100%;
 }
 
 /* MATCH CARD */
 .match-card {
+  flex: 0 0 calc(33.333% - 22px);
+  min-width: 320px;
   background-color: var(--card-bg);
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -78,7 +81,7 @@
 
 .match-card-image {
   width: 100%;
-  height: 240px;
+  height: 280px;
   overflow: hidden;
   position: relative;
   background-color: #f3f4f6;
