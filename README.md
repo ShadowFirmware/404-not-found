@@ -2,7 +2,7 @@
 
 Plataforma de matching para mascotas tipo Tinder con sistema de chat en tiempo real.
 
-## 🚀 Tecnologías
+## Tecnologías
 
 - **React 19** - Framework principal
 - **Vite** - Build tool y dev server
@@ -12,7 +12,7 @@ Plataforma de matching para mascotas tipo Tinder con sistema de chat en tiempo r
 - **Socket.io** - Chat en tiempo real
 - **Lucide React** - Iconos
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 src/
@@ -33,7 +33,7 @@ src/
 └── assets/            # Imágenes e iconos
 ```
 
-## 🛠️ Instalación
+## Instalación
 
 ```bash
 # Instalar dependencias
@@ -46,14 +46,14 @@ cp .env.example .env
 npm run dev
 ```
 
-## 🌐 Variables de Entorno
+## Variables de Entorno
 
 ```env
 VITE_API_URL=http://localhost:8000/api
 VITE_SOCKET_URL=http://localhost:8000
 ```
 
-## 📋 Características
+## Características
 
 - ✅ Sistema de autenticación (Login/Register)
 - ✅ Gestión de perfiles de mascotas (hasta 5 por usuario)
@@ -63,15 +63,15 @@ VITE_SOCKET_URL=http://localhost:8000
 - ✅ Temas claro/oscuro
 - ✅ Diseño responsive
 
-## 🎨 Temas
+## Temas
 
 El proyecto incluye soporte para temas claro y oscuro que se pueden cambiar desde la navegación.
 
-## 🔗 API Backend
+## API Backend
 
 Este frontend se conecta con un backend Django. Asegúrate de que el backend esté corriendo en `http://localhost:8000`
 
-## 📝 Scripts Disponibles
+## Scripts Disponibles
 
 ```bash
 npm run dev      # Servidor de desarrollo
