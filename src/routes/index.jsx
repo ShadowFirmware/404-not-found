@@ -12,6 +12,7 @@ import PetOnboarding from '../features/pets/PetOnboarding';
 import Dashboard from '../components/dashboard/Dashboard';
 import Error404 from '../components/errors/Error404';
 import Error500 from '../components/errors/Error500';
+import LocationPermission from '../features/auth/LocationPermission';
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +22,10 @@ export const router = createBrowserRouter([
   {
     path: '/landing',
     element: <LandingPage />,
+  },
+  {
+    path: '/location-permission',
+    element: <LocationPermission />,
   },
   {
     path: '/pet-onboarding',
