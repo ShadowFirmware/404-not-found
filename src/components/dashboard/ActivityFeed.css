@@ -1,0 +1,139 @@
+/* ACTIVITY FEED */
+.activity-feed {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.activity-header {
+  margin-bottom: 16px;
+}
+
+.activity-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.activity-item:hover {
+  background: var(--bg-secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activity-text {
+  font-size: 14px;
+  color: var(--text-color);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.activity-user {
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.activity-count {
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.activity-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.activity-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid var(--bg-primary);
+}
+
+.activity-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activity-view-all {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.activity-view-all:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .activity-item {
+    padding: 10px;
+  }
+  
+  .activity-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .activity-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .activity-text {
+    font-size: 13px;
+  }
+}

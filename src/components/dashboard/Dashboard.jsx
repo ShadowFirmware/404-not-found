@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './Sidebar';
 import PetCard from './PetCard';
-import ChatSidebar from './ChatSidebar';
+import StatsPanel from './StatsPanel';
+import ActivityFeed from './ActivityFeed';
 import MyPets from './MyPets';
 import ProfileSettings from './ProfileSettings';
 import Matches from './Matches';
@@ -268,28 +269,6 @@ const DashboardContent = () => {
   // Obtener la mascota actual basada en el índice
   const currentPet = currentIndex < mockPets.length ? mockPets[currentIndex] : null;
 
-  // Mock data for active chats
-  const mockChats = [
-    {
-      id: 1,
-      name: 'Bryan Villamil',
-      lastMessage: 'Vamos a jugar con los perritos',
-      avatar: 'https://ui-avatars.com/api/?name=Bryan+Villamil&background=FF6B6B&color=fff&size=150'
-    },
-    {
-      id: 2,
-      name: 'Pablo Perez',
-      lastMessage: 'Hola que tal',
-      avatar: 'https://ui-avatars.com/api/?name=Pablo+Perez&background=3b82f6&color=fff&size=150'
-    },
-    {
-      id: 3,
-      name: 'Jafeh Perez',
-      lastMessage: 'Creo que cocinaré y me comeré a mi perro D:',
-      avatar: 'https://ui-avatars.com/api/?name=Jafeh+Perez&background=10b981&color=fff&size=150'
-    }
-  ];
-
   return (
     <div 
       className="dashboard"
@@ -344,7 +323,12 @@ const DashboardContent = () => {
         )}
       </div>
 
-      {activeTab !== 'pets' && activeTab !== 'settings' && activeTab !== 'matches' && activeTab !== 'chats' && <ChatSidebar chats={mockChats} />}
+      {activeTab !== 'pets' && activeTab !== 'settings' && activeTab !== 'matches' && activeTab !== 'chats' && (
+        <div className="dashboard-sidebar">
+          <StatsPanel />
+          <ActivityFeed />
+        </div>
+      )}
       
       <Toaster
         position="top-center"

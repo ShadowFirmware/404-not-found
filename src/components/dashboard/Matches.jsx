@@ -75,7 +75,7 @@ const Matches = ({ onOpenChat }) => {
   };
 
   const handleSendMessage = (pet) => {
-    // Crear conversación y cambiar a tab de chat
+    // Aqui se crea conversacion y se crea tab de el chat 
     createConversation(pet);
     onOpenChat && onOpenChat();
     toast.success(`Chat con ${pet.name} abierto`, {

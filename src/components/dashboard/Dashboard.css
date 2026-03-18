@@ -74,9 +74,18 @@
   margin: 0;
 }
 
+/* Dashboard Sidebar (Stats + Activity) */
+.dashboard-sidebar {
+  width: 350px;
+  background-color: var(--background-color);
+  padding: 20px;
+  overflow-y: auto;
+  border-left: 1px solid var(--border-color);
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .chat-sidebar {
+  .dashboard-sidebar {
     display: none;
   }
 }
