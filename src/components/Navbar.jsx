@@ -42,10 +42,9 @@ const Navbar = () => {
                 </Link>
                 <button
                   onClick={logout}
-                  className="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400"
                 >
-                  <LogOut className="h-5 w-5" />
-                  <span className="text-sm font-medium">Cerrar sesión</span>
+                  <LogOut className="h-6 w-6" />
                 </button>
               </>
             )}
