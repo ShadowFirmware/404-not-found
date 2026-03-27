@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Check } from 'lucide-react';
+import MapPicker from '../../components/common/MapPicker';
 
 const PetOnboarding = () => {
   const navigate = useNavigate();
@@ -11,7 +12,8 @@ const PetOnboarding = () => {
     petType: '',
     breed: '',
     age: '',
-    characteristics: []
+    characteristics: [],
+    location: null
   });
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
@@ -91,6 +93,9 @@ const PetOnboarding = () => {
     if (formData.characteristics.length === 0) {
       newErrors.characteristics = 'Selecciona al menos una característica';
     }
+    if (!formData.location) {
+      newErrors.location = 'Por favor selecciona la ubicación de tu mascota en el mapa';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -111,7 +116,8 @@ const PetOnboarding = () => {
           petType: '',
           breed: '',
           age: '',
-          characteristics: []
+          characteristics: [],
+          location: null
         });
       }, 3000);
     }
@@ -441,6 +447,23 @@ const PetOnboarding = () => {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Map Picker - Location */}
+          <div>
+            <MapPicker
+              initialPosition={formData.location}
+              onLocationChange={(position) => {
+                setFormData({ ...formData, location: position });
+                setErrors({ ...errors, location: '' });
+              }}
+              height="350px"
+            />
+            {errors.location && (
+              <p style={{ color: '#ef4444', fontSize: '13px', marginTop: '8px', fontWeight: '500' }}>
+                {errors.location}
+              </p>
+            )}
           </div>
 
           {/* Characteristics */}

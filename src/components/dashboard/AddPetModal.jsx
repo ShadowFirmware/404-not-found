@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
+import MapPicker from '../common/MapPicker';
 import './AddPetModal.css';
 
 const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = null }) => {
@@ -10,7 +11,8 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
     type: '',
     breed: '',
     age: '',
-    characteristics: []
+    characteristics: [],
+    location: null
   });
 
   // Cargar datos iniciales cuando se abre en modo edición
@@ -29,7 +31,8 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
         type: '',
         breed: '',
         age: '',
-        characteristics: []
+        characteristics: [],
+        location: null
       });
     }
   }, [editMode, initialData, isOpen]);
@@ -89,7 +92,8 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
       type: '',
       breed: '',
       age: '',
-      characteristics: []
+      characteristics: [],
+      location: null
     });
     onClose();
   };
@@ -191,6 +195,17 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 required
               />
             </div>
+          </div>
+
+          {/* Map Picker - Location */}
+          <div className="form-group">
+            <MapPicker
+              initialPosition={formData.location}
+              onLocationChange={(position) => {
+                setFormData({ ...formData, location: position });
+              }}
+              height="300px"
+            />
           </div>
 
           {/* Personality Traits */}
