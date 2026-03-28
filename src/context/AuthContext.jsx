@@ -11,6 +11,11 @@ export const AuthProvider = ({ children }) => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
     setLoading(false);
+
+    // Escuchar cambios en localStorage (login social desde misma tab)
+    const handleStorage = () => setUser(authService.getCurrentUser());
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const login = async (email, password) => {
@@ -30,11 +35,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const setUserFromStorage = () => {
+    setUser(authService.getCurrentUser());
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
+    setUserFromStorage,
     isAuthenticated: !!user,
     loading,
   };

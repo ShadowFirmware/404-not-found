@@ -1,17 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-
-// TODO BACKEND: WebSocket Integration con Django Channels
-// =========================================================
-// Este contexto maneja el estado de los chats y mensajes
-// Cuando se integre el backend, reemplazar localStorage por:
-// 1. WebSocket connection para mensajes en tiempo real
-// 2. REST API para cargar historial de mensajes
-// 
-// Endpoints necesarios:
-// - WS: ws://localhost:8000/ws/chat/:matchId/ (Django Channels)
-// - GET /api/chats/ -> Lista de conversaciones del usuario
-// - GET /api/chats/:matchId/messages/ -> Historial de mensajes
-// - POST /api/chats/:matchId/messages/ -> Enviar mensaje (fallback si WS falla)
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { chatService } from '../services/chatService';
+import { useAuth } from './AuthContext';
+import { useSocket } from './SocketContext';
 
 const ChatContext = createContext();
 
@@ -24,170 +14,253 @@ export const useChat = () => {
 };
 
 export const ChatProvider = ({ children }) => {
-  // Estado de conversaciones y mensajes
-  const [conversations, setConversations] = useState([]);
-  const [messages, setMessages] = useState({});
-  const [activeChat, setActiveChat] = useState(null);
+  const [conversations, setConversations]   = useState([]);
+  const [messages, setMessages]             = useState({});
+  const [activeChat, setActiveChat]         = useState(null);
+  const [loadingConversations, setLoadingConversations] = useState(false);
 
-  // Cargar datos desde localStorage al iniciar
+  const wsRef = useRef(null);
+  const { isAuthenticated, user } = useAuth();
+  const { connectToChat } = useSocket();
+
+  // ─── Limpiar todo el estado al cambiar de usuario (logout / cambio de cuenta)
   useEffect(() => {
-    const savedConversations = localStorage.getItem('pawmatch_conversations');
-    const savedMessages = localStorage.getItem('pawmatch_messages');
-    
-    if (savedConversations) {
-      setConversations(JSON.parse(savedConversations));
+    if (!user) {
+      setConversations([]);
+      setMessages({});
+      setActiveChat(null);
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     }
-    
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
+  }, [user]);
+
+  // ─── Cargar lista de conversaciones desde el backend ───────────────────────
+  const loadConversations = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setLoadingConversations(true);
+    try {
+      const data = await chatService.getConversations();
+
+      const mapped = data.map((conv) => ({
+        matchId:         conv.match_id,
+        petName:         conv.otra_mascota?.nombre   || 'Mascota',
+        petImage:        conv.otra_mascota?.foto_url || 'https://via.placeholder.com/50',
+        ownerName:       conv.otro_dueño?.nombre     || 'Usuario',
+        lastMessage:     conv.ultimo_mensaje?.contenido        || '',
+        lastMessageTime: conv.ultimo_mensaje?.['fecha_envío']  || new Date().toISOString(),
+        unreadCount:     conv.mensajes_no_leidos     || 0,
+      }));
+
+      setConversations(mapped);
+    } catch (error) {
+      console.error('Error cargando conversaciones:', error);
+    } finally {
+      setLoadingConversations(false);
     }
+  }, [isAuthenticated]);
 
-    // TODO BACKEND: Reemplazar por llamada a API
-    // const loadChats = async () => {
-    //   const response = await fetch('/api/chats/', {
-    //     headers: { 'Authorization': `Bearer ${token}` }
-    //   });
-    //   const data = await response.json();
-    //   setConversations(data.conversations);
-    // };
-    // loadChats();
-  }, []);
-
-  // Guardar en localStorage cuando cambien las conversaciones
+  // Recargar conversaciones cuando cambia el usuario (login de otro usuario)
   useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem('pawmatch_conversations', JSON.stringify(conversations));
+    if (user) {
+      setConversations([]);
+      setMessages({});
+      setActiveChat(null);
+      loadConversations();
     }
-  }, [conversations]);
+  }, [user?.dueño_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Guardar mensajes en localStorage
+  // Polling: refrescar conversaciones cada 20s para unread counts y últimos mensajes
   useEffect(() => {
-    if (Object.keys(messages).length > 0) {
-      localStorage.setItem('pawmatch_messages', JSON.stringify(messages));
-    }
-  }, [messages]);
+    if (!isAuthenticated) return;
+    const id = setInterval(() => loadConversations(), 20000);
+    return () => clearInterval(id);
+  }, [isAuthenticated, loadConversations]);
 
-  // Enviar mensaje
-  const sendMessage = (matchId, messageText) => {
-    const newMessage = {
-      id: Date.now(),
-      matchId,
-      text: messageText,
-      sender: 'me', // TODO BACKEND: Usar userId real
-      timestamp: new Date().toISOString(),
-      read: false,
+  // ─── Conectar WebSocket + cargar historial cuando cambia el chat activo ────
+  useEffect(() => {
+    // Cerrar WebSocket anterior si lo hay
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    if (!activeChat || !isAuthenticated) return;
+
+    // 1. Cargar historial de mensajes via REST
+    const loadHistory = async () => {
+      try {
+        const data = await chatService.getMessages(activeChat);
+        const mapped = data.map((msg) => ({
+          id:         msg.msg_id,
+          matchId:    activeChat,
+          text:       msg.contenido,
+          sender:     msg.remitente === user?.dueño_id ? 'me' : msg.remitente,
+          senderName: msg.remitente_nombre,
+          timestamp:  msg['fecha_envío'],
+          read:       msg['leído'],
+        }));
+        setMessages((prev) => ({ ...prev, [activeChat]: mapped }));
+      } catch (error) {
+        console.error('Error cargando mensajes:', error);
+      }
     };
 
-    // Agregar mensaje al chat
-    setMessages(prev => ({
-      ...prev,
-      [matchId]: [...(prev[matchId] || []), newMessage]
-    }));
+    loadHistory();
 
-    // Actualizar última actividad de la conversación
-    setConversations(prev => prev.map(conv => 
-      conv.matchId === matchId 
-        ? { 
-            ...conv, 
-            lastMessage: messageText,
-            lastMessageTime: new Date().toISOString(),
-            unreadCount: conv.matchId === activeChat ? 0 : (conv.unreadCount || 0)
-          }
-        : conv
-    ));
+    // 2. Abrir WebSocket para mensajes en tiempo real
+    const ws = connectToChat(activeChat, {
+      onMessage: (event) => {
+        const data = JSON.parse(event.data);
 
-    // TODO BACKEND: Enviar mensaje por WebSocket
-    // if (websocket && websocket.readyState === WebSocket.OPEN) {
-    //   websocket.send(JSON.stringify({
-    //     type: 'chat_message',
-    //     matchId,
-    //     message: messageText,
-    //     timestamp: newMessage.timestamp
-    //   }));
-    // }
-  };
+        if (data.type === 'chat_message') {
+          const newMsg = {
+            id:         data.msg_id,
+            matchId:    activeChat,
+            text:       data.message,
+            sender:     data.sender_id === user?.dueño_id ? 'me' : data.sender_id,
+            senderName: data.sender_name,
+            timestamp:  data.timestamp,
+            read:       false,
+          };
 
-  // Recibir mensaje (simulado - en producción vendrá por WebSocket)
-  const receiveMessage = (matchId, messageText, senderId, senderName) => {
-    const newMessage = {
-      id: Date.now(),
-      matchId,
-      text: messageText,
-      sender: senderId,
-      senderName,
-      timestamp: new Date().toISOString(),
-      read: false,
+          setMessages((prev) => ({
+            ...prev,
+            [activeChat]: [...(prev[activeChat] || []), newMsg],
+          }));
+
+          setConversations((prev) =>
+            prev.map((conv) =>
+              conv.matchId === activeChat
+                ? { ...conv, lastMessage: data.message, lastMessageTime: data.timestamp }
+                : conv
+            )
+          );
+        }
+      },
+      onError: (err) => console.error('WebSocket error:', err),
+    });
+
+    wsRef.current = ws;
+
+    return () => {
+      ws.close();
+      wsRef.current = null;
     };
+  }, [activeChat, isAuthenticated]);
 
-    setMessages(prev => ({
-      ...prev,
-      [matchId]: [...(prev[matchId] || []), newMessage]
-    }));
+  // ─── Enviar mensaje (WebSocket primero, REST como fallback) ────────────────
+  const sendMessage = async (matchId, messageText) => {
+    const ws = wsRef.current;
 
-    setConversations(prev => prev.map(conv => 
-      conv.matchId === matchId 
-        ? { 
-            ...conv, 
-            lastMessage: messageText,
-            lastMessageTime: new Date().toISOString(),
-            unreadCount: conv.matchId === activeChat ? 0 : (conv.unreadCount || 0) + 1
-          }
-        : conv
-    ));
-
-    // TODO BACKEND: Este método se llamará cuando llegue un mensaje por WebSocket
-    // websocket.onmessage = (event) => {
-    //   const data = JSON.parse(event.data);
-    //   receiveMessage(data.matchId, data.message, data.senderId, data.senderName);
-    // };
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type:     'chat_message',
+          match_id: matchId,
+          message:  messageText,
+        })
+      );
+    } else {
+      // Fallback: REST API
+      try {
+        const msg = await chatService.sendMessage(matchId, messageText);
+        const newMsg = {
+          id:        msg.msg_id,
+          matchId,
+          text:      msg.contenido,
+          sender:    'me',
+          timestamp: msg['fecha_envío'],
+          read:      false,
+        };
+        setMessages((prev) => ({
+          ...prev,
+          [matchId]: [...(prev[matchId] || []), newMsg],
+        }));
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.matchId === matchId
+              ? { ...conv, lastMessage: messageText, lastMessageTime: new Date().toISOString() }
+              : conv
+          )
+        );
+      } catch (error) {
+        console.error('Error enviando mensaje:', error);
+      }
+    }
   };
 
-  // Crear nueva conversación desde un match
+  // ─── Crear nueva conversación desde un match ───────────────────────────────
   const createConversation = (match) => {
-    const existingConv = conversations.find(c => c.matchId === match.id);
-    if (existingConv) {
+    const existing = conversations.find((c) => c.matchId === match.id);
+    if (existing) {
       setActiveChat(match.id);
       return;
     }
-
-    const newConversation = {
-      matchId: match.id,
-      petName: match.name,
-      petImage: match.image,
-      ownerName: match.ownerName || 'Usuario', // TODO BACKEND: Obtener del match
-      lastMessage: '',
+    const newConv = {
+      matchId:         match.id,
+      petName:         match.name,
+      petImage:        match.image,
+      ownerName:       match.ownerName || 'Usuario',
+      lastMessage:     '',
       lastMessageTime: new Date().toISOString(),
-      unreadCount: 0,
+      unreadCount:     0,
     };
-
-    setConversations(prev => [...prev, newConversation]);
-    setMessages(prev => ({ ...prev, [match.id]: [] }));
+    setConversations((prev) => [...prev, newConv]);
+    setMessages((prev)        => ({ ...prev, [match.id]: [] }));
     setActiveChat(match.id);
   };
 
-  // Marcar mensajes como leídos
+  // ─── Marcar mensajes como leídos ──────────────────────────────────────────
   const markAsRead = (matchId) => {
-    setConversations(prev => prev.map(conv => 
-      conv.matchId === matchId ? { ...conv, unreadCount: 0 } : conv
-    ));
-
-    setMessages(prev => ({
+    setConversations((prev) =>
+      prev.map((conv) => (conv.matchId === matchId ? { ...conv, unreadCount: 0 } : conv))
+    );
+    setMessages((prev) => ({
       ...prev,
-      [matchId]: (prev[matchId] || []).map(msg => ({ ...msg, read: true }))
+      [matchId]: (prev[matchId] || []).map((msg) => ({ ...msg, read: true })),
     }));
   };
 
-  // Eliminar conversación
+  // ─── Eliminar conversación (local) ────────────────────────────────────────
   const deleteConversation = (matchId) => {
-    setConversations(prev => prev.filter(conv => conv.matchId !== matchId));
-    setMessages(prev => {
-      const newMessages = { ...prev };
-      delete newMessages[matchId];
-      return newMessages;
+    setConversations((prev) => prev.filter((conv) => conv.matchId !== matchId));
+    setMessages((prev) => {
+      const next = { ...prev };
+      delete next[matchId];
+      return next;
     });
-    if (activeChat === matchId) {
-      setActiveChat(null);
-    }
+    if (activeChat === matchId) setActiveChat(null);
+  };
+
+  // ─── Recibir mensaje externo (por si se necesita llamar manualmente) ───────
+  const receiveMessage = (matchId, messageText, senderId, senderName) => {
+    const newMsg = {
+      id:         Date.now(),
+      matchId,
+      text:       messageText,
+      sender:     senderId,
+      senderName,
+      timestamp:  new Date().toISOString(),
+      read:       false,
+    };
+    setMessages((prev) => ({
+      ...prev,
+      [matchId]: [...(prev[matchId] || []), newMsg],
+    }));
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.matchId === matchId
+          ? {
+              ...conv,
+              lastMessage:     messageText,
+              lastMessageTime: new Date().toISOString(),
+              unreadCount:     conv.matchId === activeChat ? 0 : (conv.unreadCount || 0) + 1,
+            }
+          : conv
+      )
+    );
   };
 
   const value = {
@@ -195,6 +268,8 @@ export const ChatProvider = ({ children }) => {
     messages,
     activeChat,
     setActiveChat,
+    loadingConversations,
+    loadConversations,
     sendMessage,
     receiveMessage,
     createConversation,
@@ -202,9 +277,5 @@ export const ChatProvider = ({ children }) => {
     deleteConversation,
   };
 
-  return (
-    <ChatContext.Provider value={value}>
-      {children}
-    </ChatContext.Provider>
-  );
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };

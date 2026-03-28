@@ -1,53 +1,45 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import io from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import { createContext, useContext } from 'react';
 
 const SocketContext = createContext(null);
 
+/**
+ * Convierte una URL HTTP a WebSocket.
+ * "http://localhost:8000" → "ws://localhost:8000"
+ */
+const toWsUrl = (url) =>
+  url.replace(/^http/, 'ws').replace(/^https/, 'wss');
+
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const [connected, setConnected] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const SOCKET_URL = toWsUrl(
+    import.meta.env.VITE_SOCKET_URL || 'http://localhost:8000'
+  );
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:8000';
-      const token = localStorage.getItem('token');
+  /**
+   * Crea una conexión WebSocket a Django Channels para un chat específico.
+   * El token se pasa como query param porque el browser no permite headers custom en WS.
+   *
+   * @param {number|string} matchId  - ID del match
+   * @param {object}        handlers - { onOpen, onMessage, onClose, onError }
+   * @returns {WebSocket}
+   */
+  const connectToChat = (matchId, handlers = {}) => {
+    const token = localStorage.getItem('token');
+    const url = `${SOCKET_URL}/ws/chat/${matchId}/?token=${token}`;
+    const ws = new WebSocket(url);
 
-      const newSocket = io(SOCKET_URL, {
-        auth: {
-          token,
-        },
-      });
+    if (handlers.onOpen)    ws.onopen    = handlers.onOpen;
+    if (handlers.onMessage) ws.onmessage = handlers.onMessage;
+    if (handlers.onClose)   ws.onclose   = handlers.onClose;
+    if (handlers.onError)   ws.onerror   = handlers.onError;
 
-      newSocket.on('connect', () => {
-        setConnected(true);
-      });
-
-      newSocket.on('disconnect', () => {
-        setConnected(false);
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        newSocket.close();
-      };
-    } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-        setConnected(false);
-      }
-    }
-  }, [isAuthenticated]);
-
-  const value = {
-    socket,
-    connected,
+    return ws;
   };
 
-  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
+  return (
+    <SocketContext.Provider value={{ connectToChat }}>
+      {children}
+    </SocketContext.Provider>
+  );
 };
 
 export const useSocket = () => {

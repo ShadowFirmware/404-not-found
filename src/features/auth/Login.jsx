@@ -1,134 +1,157 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 import dashImage from '../../assets/images/dash.png';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, setUserFromStorage } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await authService.googleLogin(tokenResponse.access_token);
+        setUserFromStorage();
+        navigate(data.is_new_user ? '/location-permission' : '/dashboard');
+      } catch (err) {
+        setError(err?.response?.data?.access_token?.[0] || err?.response?.data?.detail || 'Error al iniciar sesión con Google.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => setError('No se pudo abrir Google. Intenta de nuevo.'),
+  });
+
+  const handleFacebookLogin = () => {
+    if (!window.FB) {
+      setError('El SDK de Facebook no está listo. Recarga la página.');
+      return;
+    }
+    window.FB.login(async (response) => {
+      if (response.authResponse) {
+        setLoading(true);
+        setError('');
+        try {
+          const data = await authService.facebookLogin(response.authResponse.accessToken);
+          setUserFromStorage();
+          navigate(data.is_new_user ? '/location-permission' : '/dashboard');
+        } catch (err) {
+          setError(err?.response?.data?.access_token?.[0] || err?.response?.data?.detail || 'Error al iniciar sesión con Facebook.');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setError('Inicio de sesión con Facebook cancelado.');
+      }
+    }, { scope: 'public_profile,email' });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simular login exitoso y redirigir a onboarding de mascota
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+    try {
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      const msg =
+        err?.response?.data?.non_field_errors?.[0] ||
+        err?.response?.data?.detail ||
+        'Credenciales inválidas. Verifica tu email y contraseña.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div 
-      style={{ 
+    <div
+      style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
+        top: 0, left: 0,
+        width: '100vw', height: '100vh',
         backgroundColor: 'black',
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${dashImage})`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)),url(${dashImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: 0,
-        padding: 0,
-        overflow: 'hidden'
+        margin: 0, padding: 0, overflow: 'hidden',
       }}
     >
-      {/* MODAL CENTRAL */}
-      <div style={{
-        width: '100%',
-        maxWidth: '380px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}>
-        
-        {/* Título */}
-        <h1 style={{
-          color: 'white',
-          fontSize: '48px',
-          fontWeight: '900',
-          marginBottom: '40px',
-          textAlign: 'center',
-          letterSpacing: '-1px',
-          textShadow: '0 4px 10px rgba(0,0,0,0.5)'
-        }}>
+      <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <h1 style={{ color: 'white', fontSize: '48px', fontWeight: '900', marginBottom: '40px', textAlign: 'center', letterSpacing: '-1px', textShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
           INICIAR SESIÓN
         </h1>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <input 
-            type="email" 
-            placeholder="Correo electrónico" 
-            style={inputStyle} 
-          />
-          <input 
-            type="password" 
-            placeholder="Contraseña" 
-            style={inputStyle} 
-          />
+        {error && (
+          <div style={{ width: '100%', padding: '12px 16px', marginBottom: '16px', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.5)', color: '#fca5a5', fontSize: '14px', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
 
-          <button 
+        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
+            style={inputStyle}
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+            style={inputStyle}
+          />
+          <button
             type="submit"
+            disabled={loading}
             style={{
-              marginTop: '10px',
-              padding: '18px',
-              borderRadius: '30px',
-              border: 'none',
-              backgroundImage: 'linear-gradient(90deg, #ff1e77 0%, #ff6b3d 100%)',
-              color: 'white',
-              fontWeight: 'bold',
-              fontSize: '18px',
-              cursor: 'pointer',
-              boxShadow: '0 10px 20px rgba(255, 30, 119, 0.3)'
+              marginTop: '10px', padding: '18px', borderRadius: '30px', border: 'none',
+              backgroundImage: loading ? 'none' : 'linear-gradient(90deg,#ff1e77 0%,#ff6b3d 100%)',
+              backgroundColor: loading ? '#666' : undefined,
+              color: 'white', fontWeight: 'bold', fontSize: '18px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 10px 20px rgba(255,30,119,0.3)',
             }}
           >
-            Entrar
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
-        {/* ¿Olvidaste tu contraseña? */}
-        <p 
-          onClick={() => navigate('/recuperar-contrasena')}
-          style={{ 
-            color: 'white', 
-            marginTop: '20px', 
-            fontSize: '14px',
-            textDecoration: 'underline',
-            cursor: 'pointer'
-          }}
-        >
+        <p onClick={() => navigate('/recuperar-contrasena')} style={{ color: 'white', marginTop: '20px', fontSize: '14px', textDecoration: 'underline', cursor: 'pointer' }}>
           ¿Olvidaste tu contraseña?
         </p>
 
-        {/* Línea divisoria con texto */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          width: '100%',
-          marginTop: '30px',
-          marginBottom: '20px'
-        }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }}></div>
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginTop: '30px', marginBottom: '20px' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }} />
           <span style={{ color: 'white', padding: '0 15px', fontSize: '14px' }}>O entra con</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }}></div>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }} />
         </div>
 
-        {/* Botones de Google y Facebook */}
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-          {/* Botón Google */}
           <button
             type="button"
-            style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '50%',
-              backgroundColor: '#ffffff',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-            }}
+            onClick={() => handleGoogleLogin()}
+            disabled={loading}
+            title="Continuar con Google"
+            style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: '#ffffff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', opacity: loading ? 0.6 : 1 }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -137,22 +160,12 @@ const Login = () => {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
           </button>
-
-          {/* Botón Facebook */}
           <button
             type="button"
-            style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '50%',
-              backgroundColor: '#1877F2',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-            }}
+            onClick={handleFacebookLogin}
+            disabled={loading}
+            title="Continuar con Facebook"
+            style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: '#1877F2', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', opacity: loading ? 0.6 : 1 }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -160,17 +173,7 @@ const Login = () => {
           </button>
         </div>
 
-        {/* ¿No tienes cuenta? Regístrate */}
-        <p 
-          onClick={() => navigate('/register')}
-          style={{ 
-            color: 'white', 
-            marginTop: '35px', 
-            fontSize: '14px', 
-            cursor: 'pointer',
-            fontWeight: '400'
-          }}
-        >
+        <p onClick={() => navigate('/register')} style={{ color: 'white', marginTop: '35px', fontSize: '14px', cursor: 'pointer' }}>
           ¿No tienes cuenta? <span style={{ textDecoration: 'underline', fontWeight: 'bold' }}>Regístrate</span>
         </p>
       </div>
@@ -178,17 +181,10 @@ const Login = () => {
   );
 };
 
-// Estilo de los inputs
 const inputStyle = {
-  width: '100%',
-  padding: '16px 20px',
-  borderRadius: '12px',
-  border: '2px solid rgba(255, 255, 255, 0.4)',
-  backgroundColor: 'transparent',
-  color: 'white',
-  fontSize: '16px',
-  outline: 'none',
-  boxSizing: 'border-box'
+  width: '100%', padding: '16px 20px', borderRadius: '12px',
+  border: '2px solid rgba(255,255,255,0.4)', backgroundColor: 'transparent',
+  color: 'white', fontSize: '16px', outline: 'none', boxSizing: 'border-box',
 };
 
 export default Login;

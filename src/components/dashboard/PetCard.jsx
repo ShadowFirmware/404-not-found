@@ -1,92 +1,78 @@
 import { X, Heart } from 'lucide-react';
 import { useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { useMatches } from '../../context/MatchesContext';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import toast from 'react-hot-toast';
 import './PetCard.css';
 
-const PetCard = ({ pet, onSwipe }) => {
-  const [exitX, setExitX] = useState(0);
-  const { addMatch } = useMatches();
-  
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-25, 25]);
-  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+const SWIPE_THRESHOLD = 100; // px necesarios para que cuente como swipe
 
-  const handleReject = () => {
-    // Animación de shake antes de deslizar
-    const cardElement = document.querySelector('.pet-card');
-    if (cardElement) {
-      cardElement.style.animation = 'shake 0.3s ease';
-      setTimeout(() => {
-        cardElement.style.animation = '';
-      }, 300);
-    }
-    
-    setExitX(-300);
-    toast.error(`${pet.name} rechazado`, {
-      icon: '❌',
-      style: {
-        borderRadius: '10px',
-        background: '#333',
-        color: '#fff',
-      },
+const PetCard = ({ pet, onSwipe }) => {
+  const [gone, setGone] = useState(false);
+
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-20, 20]);
+  const opacity = useTransform(x, [-250, -100, 0, 100, 250], [0, 1, 1, 1, 0]);
+  const likeOpacity = useTransform(x, [20, 100], [0, 1]);
+  const rejectOpacity = useTransform(x, [-100, -20], [1, 0]);
+
+  const flyOut = (direction, action) => {
+    if (gone) return;
+    setGone(true);
+    const target = direction === 'like' ? 600 : -600;
+
+    animate(x, target, {
+      type: 'tween',
+      duration: 0.3,
+      onComplete: () => onSwipe && onSwipe(pet.id, action),
     });
-    setTimeout(() => {
-      onSwipe && onSwipe(pet.id, 'reject');
-    }, 300);
+
+    if (action === 'like') {
+      toast.success(`¡Like enviado a ${pet.name}!`, {
+        icon: '❤️',
+        style: { borderRadius: '10px', background: '#10b981', color: '#fff' },
+        duration: 2000,
+      });
+    } else {
+      toast(`${pet.name} omitido`, {
+        icon: '❌',
+        style: { borderRadius: '10px', background: '#333', color: '#fff' },
+        duration: 1500,
+      });
+    }
   };
 
-  const handleLike = () => {
-    // Animación de pulse antes de deslizar
-    const cardElement = document.querySelector('.pet-card');
-    if (cardElement) {
-      cardElement.style.animation = 'pulse 0.4s ease';
-      setTimeout(() => {
-        cardElement.style.animation = '';
-      }, 400);
+  const handleDragEnd = (_, info) => {
+    if (info.offset.x > SWIPE_THRESHOLD) {
+      flyOut('like', 'like');
+    } else if (info.offset.x < -SWIPE_THRESHOLD) {
+      flyOut('reject', 'reject');
+    } else {
+      // No llegó al umbral — volver al centro
+      animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 });
     }
-    
-    setExitX(300);
-    addMatch(pet);
-    toast.success(`¡Match con ${pet.name}! 💕`, {
-      icon: '❤️',
-      style: {
-        borderRadius: '10px',
-        background: '#10b981',
-        color: '#fff',
-      },
-      duration: 3000,
-    });
-    setTimeout(() => {
-      onSwipe && onSwipe(pet.id, 'like');
-    }, 300);
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="pet-card"
       style={{ x, rotate, opacity }}
       drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      animate={exitX !== 0 ? { x: exitX } : {}}
-      transition={{ duration: 0.3 }}
+      dragConstraints={{ left: -300, right: 300 }}
+      dragElastic={0.8}
+      onDragEnd={handleDragEnd}
+      whileDrag={{ cursor: 'grabbing' }}
     >
       <div className="pet-card-image">
-        <img src={pet.image} alt={pet.name} />
-        
-        {/* Indicadores de swipe */}
-        <motion.div 
-          className="swipe-indicator reject-indicator"
-          style={{ opacity: useTransform(x, [-100, 0], [1, 0]) }}
-        >
+        <img
+          src={pet.image}
+          alt={pet.name}
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x300?text=Sin+foto'; }}
+        />
+
+        <motion.div className="swipe-indicator reject-indicator" style={{ opacity: rejectOpacity }}>
           <X size={60} />
         </motion.div>
-        
-        <motion.div 
-          className="swipe-indicator like-indicator"
-          style={{ opacity: useTransform(x, [0, 100], [0, 1]) }}
-        >
+        <motion.div className="swipe-indicator like-indicator" style={{ opacity: likeOpacity }}>
           <Heart size={60} />
         </motion.div>
       </div>
@@ -94,17 +80,17 @@ const PetCard = ({ pet, onSwipe }) => {
       <div className="pet-card-content">
         <div className="pet-header">
           <h2 className="pet-name">{pet.name}</h2>
-          {pet.distance && (
+          {pet.distance != null && (
             <span className="pet-distance">📍 {pet.distance} km</span>
           )}
         </div>
-        
+
         <div className="pet-info">
           <span>Edad: {pet.age}</span>
           <span className="separator">|</span>
           <span>Raza: {pet.breed}</span>
           <span className="separator">|</span>
-          <span>Ubicación: {pet.location}</span>
+          <span>{pet.location}</span>
         </div>
 
         <div className="pet-personality">
@@ -112,17 +98,18 @@ const PetCard = ({ pet, onSwipe }) => {
         </div>
 
         <div className="pet-actions">
-          <button 
-            className="action-btn skip-btn" 
-            onClick={handleReject}
+          <button
+            className="action-btn skip-btn"
+            onClick={() => flyOut('reject', 'reject')}
+            disabled={gone}
             aria-label="Rechazar"
           >
             <X size={28} />
           </button>
-          
-          <button 
+          <button
             className="action-btn like-btn"
-            onClick={handleLike}
+            onClick={() => flyOut('like', 'like')}
+            disabled={gone}
             aria-label="Me gusta"
           >
             <Heart size={28} />

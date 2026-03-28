@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, MoreVertical, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, MoreVertical, Trash2 } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import toast from 'react-hot-toast';
 import './ChatWindow.css';
@@ -149,13 +150,6 @@ const ChatWindow = () => {
     <div className="chat-window">
       {/* Header del chat */}
       <div className="chat-window-header">
-        <button 
-          className="back-button"
-          onClick={() => setActiveChat(null)}
-        >
-          <ArrowLeft size={24} />
-        </button>
-
         <div className="chat-window-info">
           <img 
             src={currentConversation.petImage} 
@@ -211,19 +205,24 @@ const ChatWindow = () => {
                 <span>{formatMessageDate(msgs[0].timestamp)}</span>
               </div>
               
-              {msgs.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`message ${msg.sender === 'me' ? 'sent' : 'received'}`}
-                >
-                  <div className="message-bubble">
-                    <p>{msg.text}</p>
-                    <span className="message-time">
-                      {formatMessageTime(msg.timestamp)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <AnimatePresence initial={false}>
+                {msgs.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    className={`message ${msg.sender === 'me' ? 'sent' : 'received'}`}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  >
+                    <div className="message-bubble">
+                      <p>{msg.text}</p>
+                      <span className="message-time">
+                        {formatMessageTime(msg.timestamp)}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           ))
         )}

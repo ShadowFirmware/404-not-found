@@ -1,125 +1,146 @@
-import { useState } from 'react';
-import { Camera, Save, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Camera, Save, X, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { authService } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 import './ProfileSettings.css';
 
 const ProfileSettings = () => {
-  const [formData, setFormData] = useState({
-    firstName: 'Bryan',
-    lastName: 'Villamil',
-    email: 'bryan@pawmatch.com',
-    city: 'San Francisco',
-    phone: '+1 (555) 123-4567',
-    bio: 'Me encanta pasar tiempo con mi perro Max. Siempre estamos buscando nuevos amigos peludos para jugar en el parque.',
-    profilePhoto: 'https://ui-avatars.com/api/?name=Bryan+Villamil&background=FF6B6B&color=fff&size=200',
-    showPublicly: true,
-    allowMessages: true,
-    emailNotifications: false
-  });
+  const { user, login, logout } = useAuth();
+  const navigate = useNavigate();
 
-  const [errors, setErrors] = useState({});
-  const [photoPreview, setPhotoPreview] = useState(formData.profilePhoto);
-
-  // Expresiones regulares para validación
-  const validationRules = {
-    firstName: {
-      pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/,
-      message: 'El nombre debe contener solo letras (2-50 caracteres)'
-    },
-    lastName: {
-      pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/,
-      message: 'El apellido debe contener solo letras (2-50 caracteres)'
-    },
-    email: {
-      pattern: /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/,
-      message: 'Ingresa un email válido (ejemplo@dominio.com)'
-    },
-    phone: {
-      pattern: /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/,
-      message: 'Ingresa un teléfono válido (ej: +1 555 123-4567)'
-    },
-    city: {
-      pattern: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,100}$/,
-      message: 'La ciudad debe contener solo letras (2-100 caracteres)'
-    },
-    bio: {
-      pattern: /^.{10,500}$/,
-      message: 'La biografía debe tener entre 10 y 500 caracteres'
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
-  // Validar un campo individual
+  const [formData, setFormData] = useState({
+    nombre: '',
+    email: '',
+    telefono: '',
+    ciudad: '',
+    biografia: '',
+    mostrar_telefono: false,
+    mostrar_email: false,
+  });
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [original, setOriginal] = useState(null);
+
+  // Validaciones simples
+  const validationRules = {
+    nombre: { pattern: /^.{2,100}$/, message: 'El nombre debe tener entre 2 y 100 caracteres' },
+    email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Ingresa un email válido' },
+    telefono: { pattern: /^$|^[\+]?[\d\s\-().]{7,20}$/, message: 'Teléfono inválido' },
+    ciudad: { pattern: /^.{0,100}$/, message: 'Ciudad demasiado larga' },
+    biografia: { pattern: /^[\s\S]{0,500}$/, message: 'La biografía no puede superar 500 caracteres' },
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await authService.getProfile();
+        const initial = {
+          nombre: data.nombre || '',
+          email: data.email || '',
+          telefono: data.telefono || '',
+          ciudad: data.ciudad || '',
+          biografia: data.biografia || '',
+          mostrar_telefono: data.mostrar_telefono || false,
+          mostrar_email: data.mostrar_email || false,
+        };
+        setFormData(initial);
+        setOriginal(initial);
+        setPhotoPreview(data.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.nombre || 'U')}&background=FF6B6B&color=fff&size=200`);
+      } catch {
+        toast.error('Error al cargar el perfil');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   const validateField = (name, value) => {
-    if (!validationRules[name]) return '';
-    
     const rule = validationRules[name];
-    if (!rule.pattern.test(value)) {
-      return rule.message;
-    }
-    return '';
+    if (!rule) return '';
+    return rule.pattern.test(value) ? '' : rule.message;
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
-    
-    setFormData({
-      ...formData,
-      [name]: newValue
-    });
-
-    // Validar en tiempo real solo para campos de texto
-    if (type !== 'checkbox' && validationRules[name]) {
-      const error = validateField(name, newValue);
-      setErrors({
-        ...errors,
-        [name]: error
-      });
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+    if (type !== 'checkbox') {
+      setErrors((prev) => ({ ...prev, [name]: validateField(name, newValue) }));
     }
   };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
-  // Validar todo el formulario antes de guardar
-  const validateForm = () => {
+  const validateAll = () => {
     const newErrors = {};
-    
-    // Validar cada campo
-    Object.keys(validationRules).forEach(field => {
-      const error = validateField(field, formData[field]);
-      if (error) {
-        newErrors[field] = error;
-      }
+    Object.keys(validationRules).forEach((field) => {
+      const err = validateField(field, formData[field] || '');
+      if (err) newErrors[field] = err;
     });
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    
-    if (validateForm()) {
-      console.log('Guardando cambios:', formData);
-      alert('Cambios guardados exitosamente');
-      // Aquí iría la llamada al backend
-    } else {
-      alert('Por favor corrige los errores en el formulario');
+    if (!validateAll()) {
+      toast.error('Por favor corrige los errores en el formulario');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = { ...formData };
+      // Si hay foto nueva, convertirla a base64 string
+      if (photoFile) {
+        payload.foto_perfil = photoPreview; // base64 desde FileReader
+      }
+      await authService.updateProfile(payload);
+      setOriginal(formData);
+      toast.success('¡Perfil actualizado correctamente!', { icon: '✅' });
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.response?.data?.detail || 'Error al guardar el perfil';
+      toast.error(msg);
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    console.log('Cancelando cambios');
-    // Aquí podrías resetear el formulario a los valores originales
+    if (original) {
+      setFormData(original);
+      setErrors({});
+      setPhotoFile(null);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="profile-settings-container">
+        <div className="profile-settings-header">
+          <h1>Configuración de Perfil</h1>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-settings-container">
@@ -130,33 +151,19 @@ const ProfileSettings = () => {
 
       <div className="profile-settings-card">
         <form onSubmit={handleSave}>
-          {/* SECCIÓN 1: FOTO DE PERFIL */}
+          {/* Foto de Perfil */}
           <div className="profile-section">
             <h2 className="section-title">Foto de Perfil</h2>
             <div className="profile-photo-section">
               <div className="profile-photo-wrapper">
                 <img src={photoPreview} alt="Foto de perfil" className="profile-photo" />
-                <button
-                  type="button"
-                  className="change-photo-btn"
-                  onClick={() => document.getElementById('photoInput').click()}
-                >
+                <button type="button" className="change-photo-btn" onClick={() => document.getElementById('photoInput').click()}>
                   <Camera size={20} />
                 </button>
-                <input
-                  id="photoInput"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  style={{ display: 'none' }}
-                />
+                <input id="photoInput" type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
               </div>
               <div className="profile-photo-info">
-                <button
-                  type="button"
-                  className="btn-change-photo"
-                  onClick={() => document.getElementById('photoInput').click()}
-                >
+                <button type="button" className="btn-change-photo" onClick={() => document.getElementById('photoInput').click()}>
                   Cambiar foto
                 </button>
                 <p className="photo-hint">JPG, PNG o GIF. Máximo 5MB.</p>
@@ -164,178 +171,97 @@ const ProfileSettings = () => {
             </div>
           </div>
 
-          {/* SECCIÓN 2: INFORMACIÓN PERSONAL */}
+          {/* Información Personal */}
           <div className="profile-section">
             <h2 className="section-title">Información Personal</h2>
             <div className="form-grid">
-              <div className="form-field">
-                <label htmlFor="firstName">Nombre</label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  placeholder="Tu nombre"
-                  className={errors.firstName ? 'input-error' : ''}
-                  required
-                />
-                {errors.firstName && <span className="error-message">{errors.firstName}</span>}
-              </div>
-
-              <div className="form-field">
-                <label htmlFor="lastName">Apellido</label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  placeholder="Tu apellido"
-                  className={errors.lastName ? 'input-error' : ''}
-                  required
-                />
-                {errors.lastName && <span className="error-message">{errors.lastName}</span>}
+              <div className="form-field full-width">
+                <label htmlFor="nombre">Nombre completo</label>
+                <input type="text" id="nombre" name="nombre" value={formData.nombre} onChange={handleInputChange} placeholder="Tu nombre completo" className={errors.nombre ? 'input-error' : ''} />
+                {errors.nombre && <span className="error-message">{errors.nombre}</span>}
               </div>
 
               <div className="form-field">
                 <label htmlFor="email">Email</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="tu@email.com"
-                  className={errors.email ? 'input-error' : ''}
-                  required
-                />
+                <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="tu@email.com" className={errors.email ? 'input-error' : ''} />
                 {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
 
               <div className="form-field">
-                <label htmlFor="phone">Teléfono</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="+1 (555) 000-0000"
-                  className={errors.phone ? 'input-error' : ''}
-                />
-                {errors.phone && <span className="error-message">{errors.phone}</span>}
+                <label htmlFor="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleInputChange} placeholder="+52 55 1234 5678" className={errors.telefono ? 'input-error' : ''} />
+                {errors.telefono && <span className="error-message">{errors.telefono}</span>}
               </div>
 
               <div className="form-field full-width">
-                <label htmlFor="city">Ciudad</label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  placeholder="Tu ciudad"
-                  className={errors.city ? 'input-error' : ''}
-                />
-                {errors.city && <span className="error-message">{errors.city}</span>}
+                <label htmlFor="ciudad">Ciudad</label>
+                <input type="text" id="ciudad" name="ciudad" value={formData.ciudad} onChange={handleInputChange} placeholder="Tu ciudad" className={errors.ciudad ? 'input-error' : ''} />
+                {errors.ciudad && <span className="error-message">{errors.ciudad}</span>}
               </div>
             </div>
           </div>
 
-          {/* SECCIÓN 3: SOBRE MÍ */}
+          {/* Sobre Mí */}
           <div className="profile-section">
             <h2 className="section-title">Sobre Mí</h2>
             <div className="form-field">
-              <label htmlFor="bio">Cuéntanos sobre ti y tu mascota</label>
-              <textarea
-                id="bio"
-                name="bio"
-                value={formData.bio}
-                onChange={handleInputChange}
-                placeholder="Escribe algo sobre ti y tus mascotas..."
-                rows="5"
-                className={errors.bio ? 'input-error' : ''}
-              />
-              {errors.bio && <span className="error-message">{errors.bio}</span>}
+              <label htmlFor="biografia">Cuéntanos sobre ti y tu mascota</label>
+              <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleInputChange} placeholder="Escribe algo sobre ti y tus mascotas..." rows="5" className={errors.biografia ? 'input-error' : ''} />
+              {errors.biografia && <span className="error-message">{errors.biografia}</span>}
             </div>
           </div>
 
-          {/* SECCIÓN 4: PREFERENCIAS */}
+          {/* Preferencias de privacidad */}
           <div className="profile-section">
             <h2 className="section-title">Preferencias</h2>
             <div className="preferences-list">
               <div className="preference-item">
                 <div className="preference-info">
-                  <label htmlFor="showPublicly">Mostrar mi perfil públicamente</label>
-                  <p className="preference-description">
-                    Otros usuarios podrán ver tu perfil y tus mascotas
-                  </p>
+                  <label htmlFor="mostrar_telefono">Mostrar teléfono en mi perfil</label>
+                  <p className="preference-description">Otros usuarios podrán ver tu número de teléfono</p>
                 </div>
                 <label className="switch">
-                  <input
-                    type="checkbox"
-                    id="showPublicly"
-                    name="showPublicly"
-                    checked={formData.showPublicly}
-                    onChange={handleInputChange}
-                  />
+                  <input type="checkbox" id="mostrar_telefono" name="mostrar_telefono" checked={formData.mostrar_telefono} onChange={handleInputChange} />
                   <span className="slider"></span>
                 </label>
               </div>
-
               <div className="preference-item">
                 <div className="preference-info">
-                  <label htmlFor="allowMessages">Permitir mensajes de otros usuarios</label>
-                  <p className="preference-description">
-                    Recibirás mensajes de otros dueños de mascotas
-                  </p>
+                  <label htmlFor="mostrar_email">Mostrar email en mi perfil</label>
+                  <p className="preference-description">Otros usuarios podrán ver tu correo electrónico</p>
                 </div>
                 <label className="switch">
-                  <input
-                    type="checkbox"
-                    id="allowMessages"
-                    name="allowMessages"
-                    checked={formData.allowMessages}
-                    onChange={handleInputChange}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div className="preference-item">
-                <div className="preference-info">
-                  <label htmlFor="emailNotifications">Recibir notificaciones por email</label>
-                  <p className="preference-description">
-                    Te enviaremos actualizaciones sobre matches y mensajes
-                  </p>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    id="emailNotifications"
-                    name="emailNotifications"
-                    checked={formData.emailNotifications}
-                    onChange={handleInputChange}
-                  />
+                  <input type="checkbox" id="mostrar_email" name="mostrar_email" checked={formData.mostrar_email} onChange={handleInputChange} />
                   <span className="slider"></span>
                 </label>
               </div>
             </div>
           </div>
 
-          {/* SECCIÓN 5: BOTONES */}
+          {/* Botones */}
           <div className="profile-actions">
-            <button type="button" className="btn-cancel" onClick={handleCancel}>
+            <button type="button" className="btn-cancel" onClick={handleCancel} disabled={saving}>
               <X size={20} />
               Cancelar
             </button>
-            <button type="submit" className="btn-save">
+            <button type="submit" className="btn-save" disabled={saving}>
               <Save size={20} />
-              Guardar Cambios
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Cerrar sesión */}
+      <div className="profile-settings-card logout-section">
+        <h2 className="section-title">Sesión</h2>
+        <p className="preference-description" style={{ marginBottom: '16px' }}>
+          Al cerrar sesión deberás volver a iniciar con tu correo y contraseña.
+        </p>
+        <button className="btn-logout" onClick={handleLogout}>
+          <LogOut size={18} />
+          Cerrar Sesión
+        </button>
       </div>
     </div>
   );
