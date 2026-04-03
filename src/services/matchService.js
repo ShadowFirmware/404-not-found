@@ -35,4 +35,9 @@ export const matchService = {
     const response = await api.get('/matches/activity/', { params: { limit } });
     return response.data;
   },
+
+  getPetsOverview: async () => {
+    const response = await api.get('/matches/my-pets-overview/');
+    return response.data;
+  },
 };

@@ -13,11 +13,8 @@ import ChatView from '../chat/ChatView';
 import { ThemeProvider, useTheme } from '../../context/ThemeContext';
 import { MatchesProvider } from '../../context/MatchesContext';
 import { ChatProvider } from '../../context/ChatContext';
-import { petService } from '../../services/petService';
 import { matchService } from '../../services/matchService';
 import './Dashboard.css';
-
-const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
 
 /** Convierte una mascota del backend al formato que espera PetCard */
 const mapPetForCard = (item) => {
@@ -60,16 +57,36 @@ const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState('home');
   const { theme } = useTheme();
 
-  // Mascotas del usuario y la activa para hacer match
-  const [myPets, setMyPets] = useState([]);
-  const [activePetIdx, setActivePetIdx] = useState(0);
-  const userPetId = myPets[activePetIdx]?.mascota_id ?? null;
-  // Lista de mascotas potenciales mapeadas para PetCard
+  // Vista general: resumen de mascotas del usuario
+  const [petsOverview, setPetsOverview] = useState([]);
+  const [overviewLoading, setOverviewLoading] = useState(true);
+
+  // Mascota seleccionada para hacer swipe (null = vista general)
+  const [selectedPetId, setSelectedPetId] = useState(null);
+  const [selectedPetName, setSelectedPetName] = useState('');
+
+  // Mascotas potenciales para el swipe
   const [potentialPets, setPotentialPets] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loadingPets, setLoadingPets] = useState(true);
+  const [loadingPets, setLoadingPets] = useState(false);
 
-  const loadPotentialMatches = useCallback(async (petId) => {
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true);
+    try {
+      const data = await matchService.getPetsOverview();
+      setPetsOverview(data);
+    } catch {
+      setPetsOverview([]);
+    } finally {
+      setOverviewLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadOverview(); }, [loadOverview]);
+
+  const handleSelectPet = async (petId, petName) => {
+    setSelectedPetId(petId);
+    setSelectedPetName(petName);
     setLoadingPets(true);
     try {
       const data = await matchService.getPotentialMatches(petId);
@@ -80,39 +97,20 @@ const DashboardContent = () => {
     } finally {
       setLoadingPets(false);
     }
-  }, []);
+  };
 
-  // Cargar mascotas del usuario al montar
-  useEffect(() => {
-    const init = async () => {
-      setLoadingPets(true);
-      try {
-        const pets = await petService.getMyPets();
-        setMyPets(pets);
-        if (pets.length > 0) {
-          await loadPotentialMatches(pets[0].mascota_id);
-        } else {
-          setLoadingPets(false);
-        }
-      } catch {
-        setLoadingPets(false);
-      }
-    };
-    init();
-  }, [loadPotentialMatches]);
-
-  // Recargar matches cuando cambia la mascota activa
-  const handleSelectPet = (idx) => {
-    if (idx === activePetIdx) return;
-    setActivePetIdx(idx);
-    loadPotentialMatches(myPets[idx].mascota_id);
+  const handleBackToOverview = () => {
+    setSelectedPetId(null);
+    setSelectedPetName('');
+    setPotentialPets([]);
+    loadOverview(); // refresca conteos
   };
 
   const handleSwipe = async (targetPetId, action) => {
-    if (!userPetId) return;
+    if (!selectedPetId) return;
     try {
       if (action === 'like') {
-        const result = await matchService.likeMatch(userPetId, targetPetId);
+        const result = await matchService.likeMatch(selectedPetId, targetPetId);
         if (result.es_match) {
           toast.success('¡Es un match mutuo! 🎉', {
             icon: '🐾',
@@ -121,7 +119,7 @@ const DashboardContent = () => {
           });
         }
       } else {
-        await matchService.passMatch(userPetId, targetPetId);
+        await matchService.passMatch(selectedPetId, targetPetId);
       }
     } catch {
       // match ya existente u otro error, continuamos
@@ -130,6 +128,7 @@ const DashboardContent = () => {
   };
 
   const currentPet = currentIndex < potentialPets.length ? potentialPets[currentIndex] : null;
+  const firstPetId = petsOverview[0]?.mascota_id ?? null;
 
   return (
     <div
@@ -150,7 +149,7 @@ const DashboardContent = () => {
         <AnimatePresence mode="wait">
           {activeTab === 'pets' ? (
             <TabPane key="pets" style={{ padding: '40px' }}>
-              <MyPets onPetChanged={() => userPetId && loadPotentialMatches(userPetId)} />
+              <MyPets onPetChanged={loadOverview} />
             </TabPane>
           ) : activeTab === 'settings' ? (
             <TabPane key="settings" style={{ padding: '40px' }}>
@@ -158,7 +157,7 @@ const DashboardContent = () => {
             </TabPane>
           ) : activeTab === 'matches' ? (
             <TabPane key="matches" style={{ padding: '40px' }}>
-              <Matches userPetId={userPetId} onOpenChat={() => setActiveTab('chats')} />
+              <Matches userPetId={firstPetId} onOpenChat={() => setActiveTab('chats')} />
             </TabPane>
           ) : activeTab === 'chats' ? (
             <TabPane key="chats" style={{ padding: '0', height: '100%' }}>
@@ -166,64 +165,109 @@ const DashboardContent = () => {
             </TabPane>
           ) : (
             <TabPane key="home">
-              <div className="dashboard-header">
-                <h1>Descubre Mascotas</h1>
-                <p>Encuentra el compañero de juegos perfecto para tu mascota</p>
-              </div>
-
-              {/* Selector de mascota activa */}
-              {myPets.length > 0 && (
-                <div className="pet-selector">
-                  <span className="pet-selector-label">Matching con:</span>
-                  <div className="pet-selector-list">
-                    {myPets.map((pet, idx) => (
-                      <button
-                        key={pet.mascota_id}
-                        className={`pet-selector-btn${idx === activePetIdx ? ' active' : ''}`}
-                        onClick={() => handleSelectPet(idx)}
-                        title={pet.nombre}
-                      >
-                        {pet.foto_url ? (
-                          <img src={pet.foto_url} alt={pet.nombre} />
-                        ) : (
-                          <span className="pet-selector-icon">🐾</span>
-                        )}
-                        <span>{pet.nombre}</span>
-                      </button>
-                    ))}
+              {!selectedPetId ? (
+                /* ── VISTA GENERAL ── */
+                <>
+                  <div className="dashboard-header">
+                    <h1>Descubre Mascotas</h1>
+                    <p>Selecciona una de tus mascotas para ver quién le dio like y sus mejores coincidencias</p>
                   </div>
-                </div>
+                  <div className="dashboard-content">
+                    {overviewLoading ? (
+                      <div className="no-more-pets">
+                        <div className="no-pets-icon">🐾</div>
+                        <h2>Cargando...</h2>
+                      </div>
+                    ) : petsOverview.length === 0 ? (
+                      <div className="no-more-pets">
+                        <div className="no-pets-icon">🐾</div>
+                        <h2>Primero registra una mascota</h2>
+                        <p>Ve a "Mis Mascotas" para agregar tu primera mascota y comenzar a hacer matches.</p>
+                      </div>
+                    ) : (
+                      <div className="pets-overview-grid">
+                        {petsOverview.map((pet) => (
+                          <motion.button
+                            key={pet.mascota_id}
+                            className="overview-pet-card"
+                            onClick={() => handleSelectPet(pet.mascota_id, pet.nombre)}
+                            whileHover={{ y: -6, transition: { duration: 0.15 } }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            <div className="overview-pet-photo">
+                              {pet.foto_url ? (
+                                <img
+                                  src={pet.foto_url}
+                                  alt={pet.nombre}
+                                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x300?text=🐾'; }}
+                                />
+                              ) : (
+                                <div className="overview-pet-no-photo">🐾</div>
+                              )}
+                              {pet.likes_pendientes > 0 && (
+                                <span className="overview-likes-badge">
+                                  ❤️ {pet.likes_pendientes}
+                                </span>
+                              )}
+                            </div>
+                            <div className="overview-pet-info">
+                              <h3>{pet.nombre}</h3>
+                              <p>{pet.especie}{pet.raza ? ` · ${pet.raza}` : ''}{pet.edad != null ? ` · ${pet.edad} años` : ''}</p>
+                              <div className="overview-pet-stats">
+                                {pet.likes_pendientes > 0 && (
+                                  <span className="stat-likes">❤️ {pet.likes_pendientes} {pet.likes_pendientes === 1 ? 'like' : 'likes'}</span>
+                                )}
+                                {pet.matches_aceptados > 0 && (
+                                  <span className="stat-matches">✨ {pet.matches_aceptados} {pet.matches_aceptados === 1 ? 'match' : 'matches'}</span>
+                                )}
+                                {pet.likes_pendientes === 0 && pet.matches_aceptados === 0 && (
+                                  <span className="stat-empty">Ver coincidencias</span>
+                                )}
+                              </div>
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* ── MODO SWIPE ── */
+                <>
+                  <div className="dashboard-header swipe-header">
+                    <button className="back-to-overview" onClick={handleBackToOverview}>
+                      ← Mis mascotas
+                    </button>
+                    <div>
+                      <h1>Descubre para <span className="active-pet-name">{selectedPetName}</span></h1>
+                      <p>{potentialPets.length > 0 ? `${potentialPets.length} mascotas disponibles` : 'No hay más por ahora'}</p>
+                    </div>
+                  </div>
+                  <div className="dashboard-content">
+                    {loadingPets ? (
+                      <div className="no-more-pets">
+                        <div className="no-pets-icon">🐾</div>
+                        <h2>Cargando mascotas...</h2>
+                      </div>
+                    ) : currentPet ? (
+                      <PetCard key={currentPet.id} pet={currentPet} onSwipe={handleSwipe} />
+                    ) : (
+                      <div className="no-more-pets">
+                        <div className="no-pets-icon">🐾</div>
+                        <h2>No hay más mascotas por ahora</h2>
+                        <p>Vuelve más tarde para ver nuevas sugerencias</p>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
-
-              <div className="dashboard-content">
-                {loadingPets ? (
-                  <div className="no-more-pets">
-                    <div className="no-pets-icon">🐾</div>
-                    <h2>Cargando mascotas...</h2>
-                  </div>
-                ) : !userPetId ? (
-                  <div className="no-more-pets">
-                    <div className="no-pets-icon">🐾</div>
-                    <h2>Primero registra una mascota</h2>
-                    <p>Ve a "Mis Mascotas" para agregar tu primera mascota y comenzar a hacer matches.</p>
-                  </div>
-                ) : currentPet ? (
-                  <PetCard key={currentPet.id} pet={currentPet} onSwipe={handleSwipe} />
-                ) : (
-                  <div className="no-more-pets">
-                    <div className="no-pets-icon">🐾</div>
-                    <h2>No hay más mascotas por ahora</h2>
-                    <p>Vuelve más tarde para ver nuevas sugerencias</p>
-                  </div>
-                )}
-              </div>
             </TabPane>
           )}
         </AnimatePresence>
       </div>
 
       <AnimatePresence>
-        {activeTab !== 'pets' && activeTab !== 'settings' && activeTab !== 'matches' && activeTab !== 'chats' && (
+        {activeTab !== 'pets' && activeTab !== 'settings' && activeTab !== 'matches' && activeTab !== 'chats' && !selectedPetId && (
           <motion.div
             className="dashboard-sidebar"
             initial={{ opacity: 0, x: 30 }}
