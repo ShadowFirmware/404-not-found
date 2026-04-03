@@ -47,7 +47,7 @@ const mapFiltered = (item) => {
 };
 
 /* ── Tarjeta individual de la grilla ── */
-const DiscoverCard = ({ pet, selectedPetId, onLike, onPass }) => {
+const DiscoverCard = ({ pet, selectedPetId, onLike, onPass, index = 0 }) => {
   const [done, setDone] = useState(false);
 
   if (done) return null;
@@ -72,37 +72,42 @@ const DiscoverCard = ({ pet, selectedPetId, onLike, onPass }) => {
 
   return (
     <motion.div
-      className="discover-card"
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      className="match-card"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ delay: index * 0.04, type: 'spring', stiffness: 300, damping: 24 }}
+      whileHover={{ y: -4, transition: { duration: 0.15 } }}
     >
-      <div className="discover-card-photo">
+      <div className="match-card-image">
         <img
           src={pet.image}
           alt={pet.name}
-          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x300?text=🐾'; }}
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x300?text=Sin+foto'; }}
         />
-        {pet.likedMe && <span className="liked-me-badge">❤️ te dio like</span>}
-        {pet.score != null && (
-          <span className="score-badge">{Math.round(pet.score * 100)}%</span>
+        {pet.likedMe && <div className="liked-me-badge">❤️ te dio like</div>}
+        {pet.score != null && !pet.likedMe && (
+          <div className="match-badge">{Math.round(pet.score * 100)}% compatible</div>
         )}
       </div>
-      <div className="discover-card-body">
-        <h3>{pet.name}</h3>
-        <p className="discover-card-breed">{pet.breed} · {pet.age}</p>
-        <p className="discover-card-owner">{pet.ownerName}</p>
-        {pet.personality ? <p className="discover-card-personality">{pet.personality}</p> : null}
-      </div>
-      <div className="discover-card-actions">
-        <button className="dc-pass-btn" onClick={handlePass} title="Pasar">
-          <X size={18} />
-        </button>
-        <button className="dc-like-btn" onClick={handleLike} title="Like">
-          <Heart size={18} />
-        </button>
+      <div className="match-card-content">
+        <h3 className="match-pet-name">{pet.name}</h3>
+        <div className="match-pet-info">
+          <span className="info-item"><strong>Edad:</strong> {pet.age}</span>
+          <span className="info-item"><strong>Raza:</strong> {pet.breed}</span>
+          <span className="info-item"><strong>Dueño:</strong> {pet.ownerName}</span>
+        </div>
+        {pet.personality && (
+          <div className="match-personality"><p>{pet.personality}</p></div>
+        )}
+        <div className="match-actions">
+          <button className="match-btn dc-pass-btn" onClick={handlePass} title="Pasar">
+            <X size={18} /> Pasar
+          </button>
+          <button className="match-btn dc-like-btn" onClick={handleLike} title="Like">
+            <Heart size={18} /> Like
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -302,10 +307,11 @@ const DashboardContent = () => {
                 ) : (
                   <AnimatePresence>
                     <div className="discover-grid">
-                      {displayPets.map((pet) => (
+                      {displayPets.map((pet, i) => (
                         <DiscoverCard
                           key={pet.id}
                           pet={pet}
+                          index={i}
                           selectedPetId={selectedPetId}
                           onLike={handleLike}
                           onPass={handlePass}
