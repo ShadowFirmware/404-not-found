@@ -1,204 +1,159 @@
 import { motion } from 'framer-motion';
-import { Home, ArrowLeft } from 'lucide-react';
+import { Home, ArrowLeft, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './ErrorPages.css';
+
+const PAWS = ['🐾', '🐾', '🐾', '🐾', '🐾', '🐾', '🐾', '🐾', '🐾', '🐾', '🐾', '🐾'];
 
 const Error404 = () => {
   const navigate = useNavigate();
 
   return (
     <div className="error-page-404">
-      {/* Estrellas flotantes */}
-      <div className="stars">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
+
+      {/* Patas flotantes de fondo */}
+      <div className="paws-bg">
+        {PAWS.map((_, i) => (
+          <motion.span
             key={i}
-            className="star"
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: [0, 1, 0],
-              scale: [0, 1, 0]
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              delay: i * 0.2
-            }}
+            className="paw-bg-item"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${(i * 8.3) % 100}%`,
+              top: `${(i * 13 + 5) % 90}%`,
+              fontSize: `${16 + (i % 4) * 8}px`,
+              rotate: `${(i * 37) % 360}deg`,
             }}
-          />
+            animate={{ y: [0, -18, 0], opacity: [0.07, 0.18, 0.07] }}
+            transition={{ duration: 4 + (i % 3), repeat: Infinity, delay: i * 0.4, ease: 'easeInOut' }}
+          >
+            🐾
+          </motion.span>
         ))}
       </div>
 
-      <div className="error-content-404">
-        {/* Perro detective con lupa */}
-        <div className="illustration-404">
-          {/* Perro */}
-          <motion.div 
-            className="detective-dog"
-            animate={{
-              y: [0, -15, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
+      {/* Blob decorativo */}
+      <div className="blob-1" />
+      <div className="blob-2" />
+
+      <div className="error-layout-404">
+
+        {/* ── Columna izquierda: ilustración ── */}
+        <div className="error-illustration-col">
+          <motion.div
+            className="dog-emoji-wrap"
+            animate={{ y: [0, -16, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <div className="dog-body">
-              {/* Cabeza */}
-              <div className="dog-head">
-                <div className="dog-ear left"></div>
-                <div className="dog-ear right"></div>
-                <div className="dog-face">
-                  <motion.div 
-                    className="dog-eye left"
-                    animate={{ scaleY: [1, 0.1, 1] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  />
-                  <motion.div 
-                    className="dog-eye right"
-                    animate={{ scaleY: [1, 0.1, 1] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  />
-                  <div className="dog-nose"></div>
-                  <div className="dog-mouth"></div>
-                </div>
-              </div>
-              {/* Cuerpo */}
-              <div className="dog-torso"></div>
-              {/* Patas */}
-              <div className="dog-legs">
-                <div className="dog-leg"></div>
-                <div className="dog-leg"></div>
-              </div>
+            {/* Cuerpo del perro en emojis + CSS */}
+            <div className="dog-emoji-scene">
+              <motion.span
+                className="dog-main-emoji"
+                animate={{ rotate: [-4, 4, -4] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                🐕
+              </motion.span>
+
+              {/* Lupa animada */}
+              <motion.div
+                className="magnifier-wrap"
+                animate={{ rotate: [-15, 15, -15], x: [0, 8, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <Search size={52} strokeWidth={2.5} className="magnifier-icon" />
+              </motion.div>
+
+              {/* Burbuja de pensamiento */}
+              <motion.div
+                className="thought-bubble"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.8, duration: 0.4 }}
+              >
+                <motion.span
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 1.8, repeat: Infinity }}
+                >
+                  ¿Dónde está?
+                </motion.span>
+              </motion.div>
             </div>
 
-            {/* Lupa animada */}
-            <motion.div 
-              className="magnifying-glass"
-              animate={{
-                rotate: [0, -10, 10, -10, 0],
-                x: [0, 5, -5, 5, 0]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <div className="glass-lens">
-                <motion.div 
-                  className="glass-shine"
-                  animate={{ opacity: [0.3, 0.8, 0.3] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
-              </div>
-              <div className="glass-handle"></div>
-            </motion.div>
-
-            {/* Sombrero detective */}
-            <div className="detective-hat">
-              <div className="hat-top"></div>
-              <div className="hat-brim"></div>
+            {/* Huellas debajo */}
+            <div className="paw-trail-404">
+              {[...Array(5)].map((_, i) => (
+                <motion.span
+                  key={i}
+                  className="trail-paw"
+                  animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
+                >
+                  🐾
+                </motion.span>
+              ))}
             </div>
           </motion.div>
-
-          {/* Huellas animadas */}
-          <div className="paw-trail">
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="paw-print-trail"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ 
-                  opacity: [0, 1, 0],
-                  scale: [0, 1, 0],
-                  rotate: [0, 360]
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  delay: i * 0.3
-                }}
-              >
-                🐾
-              </motion.div>
-            ))}
-          </div>
         </div>
 
-        {/* Texto del error */}
-        <motion.div 
-          className="error-text-404"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
+        {/* ── Columna derecha: texto ── */}
+        <motion.div
+          className="error-text-col"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
         >
-          <motion.h1 
+          {/* Número 404 */}
+          <motion.h1
             className="error-code-404"
-            animate={{ 
-              scale: [1, 1.05, 1],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{ scale: [1, 1.03, 1] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
             4<span className="zero-404">0</span>4
           </motion.h1>
-          
-          <h2 className="error-title-404">¡PÁGINA PERDIDA!</h2>
-          
-          <p className="error-message-404">
-            Nuestro detective canino ha buscado por todas partes pero... 🔍<br/>
-            <strong>¡Esta página se escapó!</strong>
-          </p>
 
-          <div className="error-subtitle-404">
-            <motion.span
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              😅 Parece que alguien dejó la puerta abierta...
-            </motion.span>
-          </div>
+          <div className="error-tag">Página no encontrada</div>
+
+          <h2 className="error-title-404">¡Esta página se escapó!</h2>
+
+          <p className="error-message-404">
+            Nuestro detective canino buscó por todas partes pero no pudo encontrar lo que buscas.
+            Puede que la página haya cambiado de dirección o simplemente salió a pasear.
+          </p>
 
           {/* Botones */}
           <div className="error-buttons-404">
             <motion.button
-              className="btn-404 btn-home"
+              className="btn-404 btn-primary-404"
               onClick={() => navigate('/dashboard')}
               whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.96 }}
             >
-              <Home size={22} />
-              <span>Volver a Casa</span>
+              <Home size={20} />
+              Ir al inicio
             </motion.button>
-            
+
             <motion.button
-              className="btn-404 btn-back"
+              className="btn-404 btn-ghost-404"
               onClick={() => navigate(-1)}
               whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.96 }}
             >
-              <ArrowLeft size={22} />
-              <span>Regresar</span>
+              <ArrowLeft size={20} />
+              Regresar
             </motion.button>
           </div>
 
-          {/* Mensaje divertido */}
-          <motion.div 
-            className="fun-message-404"
+          {/* Código de error */}
+          <motion.p
+            className="error-hint"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
+            transition={{ delay: 1 }}
           >
-            <div className="speech-bubble">
-              <p>"¡Guau! He olido por todos lados y no encuentro esta página... 🐕"</p>
-              <div className="bubble-arrow"></div>
-            </div>
-          </motion.div>
+            Error 404 · PawMatch
+          </motion.p>
         </motion.div>
+
       </div>
     </div>
   );
