@@ -87,41 +87,6 @@
   color: #fff;
 }
 
-/* ── Área de scroll de la grilla ── */
-.discover-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 28px 40px;
-}
-
-/* ── Grilla de tarjetas (reutiliza .match-card de Matches.css) ── */
-.discover-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-
-/* Colores de los botones like/pass dentro de la grilla */
-.dc-pass-btn {
-  background: var(--hover-color) !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid var(--border-color) !important;
-}
-
-.dc-pass-btn:hover {
-  background: #fee2e2 !important;
-  color: #ef4444 !important;
-  border-color: #ef4444 !important;
-}
-
-.dc-like-btn {
-  background: linear-gradient(135deg, #f472b6, #ec4899) !important;
-  color: #fff !important;
-}
-
-.dc-like-btn:hover {
-  background: linear-gradient(135deg, #ec4899, #db2777) !important;
-}
 
 .dashboard-content {
   flex: 1;
