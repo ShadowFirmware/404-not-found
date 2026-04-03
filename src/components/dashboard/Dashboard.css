@@ -30,144 +30,181 @@
   color: var(--text-secondary);
 }
 
-/* ── Vista general de mascotas ── */
-.pets-overview-grid {
+/* ── Selector de mascota ── */
+.pet-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 40px;
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.pet-selector-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.pet-selector-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pet-selector-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--border-color);
+  background: transparent;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pet-selector-btn img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pet-selector-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.pet-selector-btn.active {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+}
+
+/* ── Área de scroll de la grilla ── */
+.discover-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 40px;
+}
+
+/* ── Grilla de tarjetas ── */
+.discover-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  width: 100%;
-  max-width: 900px;
+  gap: 18px;
 }
 
-.overview-pet-card {
+.discover-card {
   background: var(--card-bg);
-  border: 2px solid var(--border-color);
-  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
   overflow: hidden;
-  cursor: pointer;
-  text-align: left;
-  padding: 0;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
-.overview-pet-card:hover {
+.discover-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
   border-color: var(--primary-color);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
-.overview-pet-photo {
+.discover-card-photo {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  background: var(--hover-color);
   overflow: hidden;
+  background: var(--hover-color);
 }
 
-.overview-pet-photo img {
+.discover-card-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.overview-pet-no-photo {
-  width: 100%;
-  height: 100%;
+.score-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.discover-card-body {
+  padding: 12px 14px 8px;
+  flex: 1;
+}
+
+.discover-card-body h3 {
+  margin: 0 0 3px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.discover-card-breed {
+  margin: 0 0 2px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.discover-card-owner {
+  margin: 0 0 4px 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.discover-card-personality {
+  margin: 4px 0 0 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.discover-card-actions {
+  display: flex;
+  border-top: 1px solid var(--border-color);
+}
+
+.dc-pass-btn,
+.dc-like-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 52px;
+  transition: background 0.15s, color 0.15s;
 }
 
-.overview-likes-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: linear-gradient(135deg, #ef4444, #f97316);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  box-shadow: 0 2px 8px rgba(239,68,68,0.4);
-  animation: pulse-badge 1.8s ease-in-out infinite;
+.dc-pass-btn {
+  color: #9ca3af;
+  border-right: 1px solid var(--border-color);
 }
 
-.overview-pet-info {
-  padding: 14px 16px;
-}
+.dc-pass-btn:hover { background: #fee2e2; color: #ef4444; }
 
-.overview-pet-info h3 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-color);
-}
-
-.overview-pet-info p {
-  margin: 0 0 10px 0;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.overview-pet-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.stat-likes {
-  font-size: 12px;
-  font-weight: 600;
-  color: #ef4444;
-  background: rgba(239,68,68,0.1);
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.stat-matches {
-  font-size: 12px;
-  font-weight: 600;
-  color: #8b5cf6;
-  background: rgba(139,92,246,0.1);
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.stat-empty {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-/* ── Header en modo swipe ── */
-.swipe-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.back-to-overview {
-  flex-shrink: 0;
-  background: var(--hover-color);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.back-to-overview:hover {
-  background: var(--primary-color);
-  color: #fff;
-  border-color: var(--primary-color);
-}
-
-.active-pet-name {
-  color: var(--primary-color);
-}
+.dc-like-btn { color: #9ca3af; }
+.dc-like-btn:hover { background: #fce7f3; color: #ec4899; }
 
 .dashboard-content {
   flex: 1;

@@ -33,4 +33,9 @@ export const petService = {
     const response = await api.delete(`/pets/${id}/`);
     return response.data;
   },
+
+  discoverPets: async () => {
+    const response = await api.get('/pets/discover/');
+    return response.data;
+  },
 };

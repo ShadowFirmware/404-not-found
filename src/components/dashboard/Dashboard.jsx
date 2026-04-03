@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
+import { Heart, X } from 'lucide-react';
 import Sidebar from './Sidebar';
-import PetCard from './PetCard';
 import StatsPanel from './StatsPanel';
 import ActivityFeed from './ActivityFeed';
 import MyPets from './MyPets';
@@ -13,27 +13,102 @@ import ChatView from '../chat/ChatView';
 import { ThemeProvider, useTheme } from '../../context/ThemeContext';
 import { MatchesProvider } from '../../context/MatchesContext';
 import { ChatProvider } from '../../context/ChatContext';
+import { petService } from '../../services/petService';
 import { matchService } from '../../services/matchService';
 import './Dashboard.css';
 
-/** Convierte una mascota del backend al formato que espera PetCard */
-const mapPetForCard = (item) => {
+/** Mapea una mascota cruda del endpoint /discover/ */
+const mapDiscover = (m) => ({
+  id: m.mascota_id,
+  name: m.nombre,
+  age: m.edad != null ? `${m.edad} ${m.edad === 1 ? 'año' : 'años'}` : '?',
+  breed: m.raza || m.especie,
+  image: m.foto_url || 'https://via.placeholder.com/300x300?text=🐾',
+  ownerName: m.dueño_nombre || 'Usuario',
+  personality: m.descripción || m.especie || '',
+  likedMe: false,
+  score: null,
+});
+
+/** Mapea un resultado del endpoint /potential/{id}/ */
+const mapFiltered = (item) => {
   const m = item.mascota;
-  const image = m.foto_url || 'https://via.placeholder.com/400x300?text=Sin+foto';
   return {
     id: m.mascota_id,
     name: m.nombre,
     age: m.edad != null ? `${m.edad} ${m.edad === 1 ? 'año' : 'años'}` : '?',
     breed: m.raza || m.especie,
-    location: 'Cerca de ti',
-    distance: item.distancia_km ?? null,
-    personality: m.descripción || m.especie,
-    details: `Dueño: ${m.dueño_nombre || 'Desconocido'} · Score: ${Math.round(item.score * 100)}%`,
-    image,
+    image: m.foto_url || 'https://via.placeholder.com/300x300?text=🐾',
+    ownerName: m.dueño_nombre || 'Usuario',
+    personality: m.descripción || m.especie || '',
     likedMe: item.liked_me || false,
+    score: item.score,
   };
 };
 
+/* ── Tarjeta individual de la grilla ── */
+const DiscoverCard = ({ pet, selectedPetId, onLike, onPass }) => {
+  const [done, setDone] = useState(false);
+
+  if (done) return null;
+
+  const handleLike = async () => {
+    if (!selectedPetId) {
+      toast('Selecciona una de tus mascotas para dar like', { icon: '🐾' });
+      return;
+    }
+    setDone(true);
+    await onLike(pet.id);
+  };
+
+  const handlePass = () => {
+    if (!selectedPetId) {
+      toast('Selecciona una de tus mascotas para interactuar', { icon: '🐾' });
+      return;
+    }
+    setDone(true);
+    onPass(pet.id);
+  };
+
+  return (
+    <motion.div
+      className="discover-card"
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+    >
+      <div className="discover-card-photo">
+        <img
+          src={pet.image}
+          alt={pet.name}
+          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x300?text=🐾'; }}
+        />
+        {pet.likedMe && <span className="liked-me-badge">❤️ te dio like</span>}
+        {pet.score != null && (
+          <span className="score-badge">{Math.round(pet.score * 100)}%</span>
+        )}
+      </div>
+      <div className="discover-card-body">
+        <h3>{pet.name}</h3>
+        <p className="discover-card-breed">{pet.breed} · {pet.age}</p>
+        <p className="discover-card-owner">{pet.ownerName}</p>
+        {pet.personality ? <p className="discover-card-personality">{pet.personality}</p> : null}
+      </div>
+      <div className="discover-card-actions">
+        <button className="dc-pass-btn" onClick={handlePass} title="Pasar">
+          <X size={18} />
+        </button>
+        <button className="dc-like-btn" onClick={handleLike} title="Like">
+          <Heart size={18} />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ── Variantes de animación para las pestañas ── */
 const tabVariants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 320, damping: 26 } },
@@ -53,82 +128,89 @@ const TabPane = ({ children, style }) => (
   </motion.div>
 );
 
+/* ── Componente principal ── */
 const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState('home');
   const { theme } = useTheme();
 
-  // Vista general: resumen de mascotas del usuario
-  const [petsOverview, setPetsOverview] = useState([]);
-  const [overviewLoading, setOverviewLoading] = useState(true);
-
-  // Mascota seleccionada para hacer swipe (null = vista general)
+  // Mascotas propias para el selector
+  const [myPets, setMyPets] = useState([]);
+  // Mascota activa en el selector (null = vista general)
   const [selectedPetId, setSelectedPetId] = useState(null);
-  const [selectedPetName, setSelectedPetName] = useState('');
 
-  // Mascotas potenciales para el swipe
-  const [potentialPets, setPotentialPets] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loadingPets, setLoadingPets] = useState(false);
+  // Vista general: todas las mascotas de otros usuarios
+  const [discoverPets, setDiscoverPets] = useState([]);
+  const [discoverLoading, setDiscoverLoading] = useState(true);
 
-  const loadOverview = useCallback(async () => {
-    setOverviewLoading(true);
+  // Vista filtrada: coincidencias + likes para la mascota seleccionada
+  const [filteredPets, setFilteredPets] = useState([]);
+  const [filterLoading, setFilterLoading] = useState(false);
+
+  // Cargar mis mascotas y la grilla general al montar
+  const loadDiscover = useCallback(async () => {
+    setDiscoverLoading(true);
     try {
-      const data = await matchService.getPetsOverview();
-      setPetsOverview(data);
+      const [pets, all] = await Promise.all([
+        petService.getMyPets(),
+        petService.discoverPets(),
+      ]);
+      setMyPets(pets);
+      setDiscoverPets(all.map(mapDiscover));
     } catch {
-      setPetsOverview([]);
+      setDiscoverPets([]);
     } finally {
-      setOverviewLoading(false);
+      setDiscoverLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadOverview(); }, [loadOverview]);
+  useEffect(() => { loadDiscover(); }, [loadDiscover]);
 
-  const handleSelectPet = async (petId, petName) => {
+  // Click en el selector: seleccionar o deseleccionar mascota
+  const handleTogglePet = async (petId) => {
+    if (selectedPetId === petId) {
+      // Deseleccionar → volver a vista general
+      setSelectedPetId(null);
+      setFilteredPets([]);
+      return;
+    }
     setSelectedPetId(petId);
-    setSelectedPetName(petName);
-    setLoadingPets(true);
+    setFilterLoading(true);
     try {
       const data = await matchService.getPotentialMatches(petId);
-      setPotentialPets(data.map(mapPetForCard));
-      setCurrentIndex(0);
+      setFilteredPets(data.map(mapFiltered));
     } catch {
-      setPotentialPets([]);
+      setFilteredPets([]);
     } finally {
-      setLoadingPets(false);
+      setFilterLoading(false);
     }
   };
 
-  const handleBackToOverview = () => {
-    setSelectedPetId(null);
-    setSelectedPetName('');
-    setPotentialPets([]);
-    loadOverview(); // refresca conteos
-  };
-
-  const handleSwipe = async (targetPetId, action) => {
+  const handleLike = async (targetPetId) => {
     if (!selectedPetId) return;
     try {
-      if (action === 'like') {
-        const result = await matchService.likeMatch(selectedPetId, targetPetId);
-        if (result.es_match) {
-          toast.success('¡Es un match mutuo! 🎉', {
-            icon: '🐾',
-            style: { background: '#10b981', color: '#fff' },
-            duration: 4000,
-          });
-        }
-      } else {
-        await matchService.passMatch(selectedPetId, targetPetId);
+      const result = await matchService.likeMatch(selectedPetId, targetPetId);
+      if (result.es_match) {
+        toast.success('¡Es un match mutuo! 🎉', {
+          icon: '🐾',
+          style: { background: '#10b981', color: '#fff' },
+          duration: 4000,
+        });
       }
-    } catch {
-      // match ya existente u otro error, continuamos
-    }
-    setCurrentIndex((prev) => prev + 1);
+      return result;
+    } catch { /* ya interactuado, ignorar */ }
   };
 
-  const currentPet = currentIndex < potentialPets.length ? potentialPets[currentIndex] : null;
-  const firstPetId = petsOverview[0]?.mascota_id ?? null;
+  const handlePass = async (targetPetId) => {
+    if (!selectedPetId) return;
+    try {
+      await matchService.passMatch(selectedPetId, targetPetId);
+    } catch { /* ignorar */ }
+  };
+
+  const displayPets = selectedPetId ? filteredPets : discoverPets;
+  const isLoading  = selectedPetId ? filterLoading : discoverLoading;
+  const firstPetId = myPets[0]?.mascota_id ?? null;
+  const selectedPet = myPets.find((p) => p.mascota_id === selectedPetId);
 
   return (
     <div
@@ -149,7 +231,7 @@ const DashboardContent = () => {
         <AnimatePresence mode="wait">
           {activeTab === 'pets' ? (
             <TabPane key="pets" style={{ padding: '40px' }}>
-              <MyPets onPetChanged={loadOverview} />
+              <MyPets onPetChanged={loadDiscover} />
             </TabPane>
           ) : activeTab === 'settings' ? (
             <TabPane key="settings" style={{ padding: '40px' }}>
@@ -164,110 +246,82 @@ const DashboardContent = () => {
               <ChatView />
             </TabPane>
           ) : (
-            <TabPane key="home">
-              {!selectedPetId ? (
-                /* ── VISTA GENERAL ── */
-                <>
-                  <div className="dashboard-header">
-                    <h1>Descubre Mascotas</h1>
-                    <p>Selecciona una de tus mascotas para ver quién le dio like y sus mejores coincidencias</p>
+            <TabPane key="home" style={{ display: 'flex', flexDirection: 'column' }}>
+              {/* Header */}
+              <div className="dashboard-header">
+                <h1>Descubre Mascotas</h1>
+                <p>
+                  {selectedPetId
+                    ? `Mostrando likes y coincidencias para ${selectedPet?.nombre ?? ''}`
+                    : 'Vista general · Selecciona una de tus mascotas para filtrar'}
+                </p>
+              </div>
+
+              {/* Selector de mis mascotas */}
+              {myPets.length > 0 && (
+                <div className="pet-selector">
+                  <span className="pet-selector-label">Filtrar con:</span>
+                  <div className="pet-selector-list">
+                    {myPets.map((pet) => (
+                      <button
+                        key={pet.mascota_id}
+                        className={`pet-selector-btn${selectedPetId === pet.mascota_id ? ' active' : ''}`}
+                        onClick={() => handleTogglePet(pet.mascota_id)}
+                        title={selectedPetId === pet.mascota_id ? 'Click para quitar filtro' : pet.nombre}
+                      >
+                        {pet.foto_url
+                          ? <img src={pet.foto_url} alt={pet.nombre} onError={(e) => { e.target.style.display = 'none'; }} />
+                          : <span className="pet-selector-icon">🐾</span>
+                        }
+                        <span>{pet.nombre}</span>
+                      </button>
+                    ))}
                   </div>
-                  <div className="dashboard-content">
-                    {overviewLoading ? (
-                      <div className="no-more-pets">
-                        <div className="no-pets-icon">🐾</div>
-                        <h2>Cargando...</h2>
-                      </div>
-                    ) : petsOverview.length === 0 ? (
-                      <div className="no-more-pets">
-                        <div className="no-pets-icon">🐾</div>
-                        <h2>Primero registra una mascota</h2>
-                        <p>Ve a "Mis Mascotas" para agregar tu primera mascota y comenzar a hacer matches.</p>
-                      </div>
-                    ) : (
-                      <div className="pets-overview-grid">
-                        {petsOverview.map((pet) => (
-                          <motion.button
-                            key={pet.mascota_id}
-                            className="overview-pet-card"
-                            onClick={() => handleSelectPet(pet.mascota_id, pet.nombre)}
-                            whileHover={{ y: -6, transition: { duration: 0.15 } }}
-                            whileTap={{ scale: 0.97 }}
-                          >
-                            <div className="overview-pet-photo">
-                              {pet.foto_url ? (
-                                <img
-                                  src={pet.foto_url}
-                                  alt={pet.nombre}
-                                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x300?text=🐾'; }}
-                                />
-                              ) : (
-                                <div className="overview-pet-no-photo">🐾</div>
-                              )}
-                              {pet.likes_pendientes > 0 && (
-                                <span className="overview-likes-badge">
-                                  ❤️ {pet.likes_pendientes}
-                                </span>
-                              )}
-                            </div>
-                            <div className="overview-pet-info">
-                              <h3>{pet.nombre}</h3>
-                              <p>{pet.especie}{pet.raza ? ` · ${pet.raza}` : ''}{pet.edad != null ? ` · ${pet.edad} años` : ''}</p>
-                              <div className="overview-pet-stats">
-                                {pet.likes_pendientes > 0 && (
-                                  <span className="stat-likes">❤️ {pet.likes_pendientes} {pet.likes_pendientes === 1 ? 'like' : 'likes'}</span>
-                                )}
-                                {pet.matches_aceptados > 0 && (
-                                  <span className="stat-matches">✨ {pet.matches_aceptados} {pet.matches_aceptados === 1 ? 'match' : 'matches'}</span>
-                                )}
-                                {pet.likes_pendientes === 0 && pet.matches_aceptados === 0 && (
-                                  <span className="stat-empty">Ver coincidencias</span>
-                                )}
-                              </div>
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                /* ── MODO SWIPE ── */
-                <>
-                  <div className="dashboard-header swipe-header">
-                    <button className="back-to-overview" onClick={handleBackToOverview}>
-                      ← Mis mascotas
-                    </button>
-                    <div>
-                      <h1>Descubre para <span className="active-pet-name">{selectedPetName}</span></h1>
-                      <p>{potentialPets.length > 0 ? `${potentialPets.length} mascotas disponibles` : 'No hay más por ahora'}</p>
-                    </div>
-                  </div>
-                  <div className="dashboard-content">
-                    {loadingPets ? (
-                      <div className="no-more-pets">
-                        <div className="no-pets-icon">🐾</div>
-                        <h2>Cargando mascotas...</h2>
-                      </div>
-                    ) : currentPet ? (
-                      <PetCard key={currentPet.id} pet={currentPet} onSwipe={handleSwipe} />
-                    ) : (
-                      <div className="no-more-pets">
-                        <div className="no-pets-icon">🐾</div>
-                        <h2>No hay más mascotas por ahora</h2>
-                        <p>Vuelve más tarde para ver nuevas sugerencias</p>
-                      </div>
-                    )}
-                  </div>
-                </>
+                </div>
               )}
+
+              {/* Grilla de mascotas */}
+              <div className="discover-scroll">
+                {isLoading ? (
+                  <div className="no-more-pets">
+                    <div className="no-pets-icon">🐾</div>
+                    <h2>Cargando...</h2>
+                  </div>
+                ) : myPets.length === 0 ? (
+                  <div className="no-more-pets">
+                    <div className="no-pets-icon">🐾</div>
+                    <h2>Primero registra una mascota</h2>
+                    <p>Ve a "Mis Mascotas" para agregar tu primera mascota y comenzar a hacer matches.</p>
+                  </div>
+                ) : displayPets.length === 0 ? (
+                  <div className="no-more-pets">
+                    <div className="no-pets-icon">🐾</div>
+                    <h2>{selectedPetId ? 'Sin coincidencias por ahora' : 'No hay mascotas aún'}</h2>
+                    <p>{selectedPetId ? 'Vuelve más tarde, o prueba con otra mascota tuya.' : 'Registra tu mascota e invita a otros usuarios.'}</p>
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    <div className="discover-grid">
+                      {displayPets.map((pet) => (
+                        <DiscoverCard
+                          key={pet.id}
+                          pet={pet}
+                          selectedPetId={selectedPetId}
+                          onLike={handleLike}
+                          onPass={handlePass}
+                        />
+                      ))}
+                    </div>
+                  </AnimatePresence>
+                )}
+              </div>
             </TabPane>
           )}
         </AnimatePresence>
       </div>
 
       <AnimatePresence>
-        {activeTab !== 'pets' && activeTab !== 'settings' && activeTab !== 'matches' && activeTab !== 'chats' && !selectedPetId && (
+        {activeTab !== 'pets' && activeTab !== 'settings' && activeTab !== 'matches' && activeTab !== 'chats' && (
           <motion.div
             className="dashboard-sidebar"
             initial={{ opacity: 0, x: 30 }}
