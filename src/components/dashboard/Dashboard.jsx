@@ -26,13 +26,14 @@ const mapPetForCard = (item) => {
   return {
     id: m.mascota_id,
     name: m.nombre,
-    age: `${m.edad} ${m.edad === 1 ? 'año' : 'años'}`,
+    age: m.edad != null ? `${m.edad} ${m.edad === 1 ? 'año' : 'años'}` : '?',
     breed: m.raza || m.especie,
     location: 'Cerca de ti',
     distance: item.distancia_km ?? null,
     personality: m.descripción || m.especie,
     details: `Dueño: ${m.dueño_nombre || 'Desconocido'} · Score: ${Math.round(item.score * 100)}%`,
     image,
+    likedMe: item.liked_me || false,
   };
 };
 
@@ -59,42 +60,53 @@ const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState('home');
   const { theme } = useTheme();
 
-  // Mascota activa del usuario (primera mascota)
-  const [userPetId, setUserPetId] = useState(null);
+  // Mascotas del usuario y la activa para hacer match
+  const [myPets, setMyPets] = useState([]);
+  const [activePetIdx, setActivePetIdx] = useState(0);
+  const userPetId = myPets[activePetIdx]?.mascota_id ?? null;
   // Lista de mascotas potenciales mapeadas para PetCard
   const [potentialPets, setPotentialPets] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadingPets, setLoadingPets] = useState(true);
 
   const loadPotentialMatches = useCallback(async (petId) => {
+    setLoadingPets(true);
     try {
       const data = await matchService.getPotentialMatches(petId);
       setPotentialPets(data.map(mapPetForCard));
       setCurrentIndex(0);
     } catch {
       setPotentialPets([]);
+    } finally {
+      setLoadingPets(false);
     }
   }, []);
 
-  // Cargar la primera mascota del usuario y sus posibles matches
+  // Cargar mascotas del usuario al montar
   useEffect(() => {
     const init = async () => {
       setLoadingPets(true);
       try {
-        const myPets = await petService.getMyPets();
-        if (myPets.length > 0) {
-          const firstPetId = myPets[0].mascota_id;
-          setUserPetId(firstPetId);
-          await loadPotentialMatches(firstPetId);
+        const pets = await petService.getMyPets();
+        setMyPets(pets);
+        if (pets.length > 0) {
+          await loadPotentialMatches(pets[0].mascota_id);
+        } else {
+          setLoadingPets(false);
         }
       } catch {
-        // sin mascotas o error de red
-      } finally {
         setLoadingPets(false);
       }
     };
     init();
   }, [loadPotentialMatches]);
+
+  // Recargar matches cuando cambia la mascota activa
+  const handleSelectPet = (idx) => {
+    if (idx === activePetIdx) return;
+    setActivePetIdx(idx);
+    loadPotentialMatches(myPets[idx].mascota_id);
+  };
 
   const handleSwipe = async (targetPetId, action) => {
     if (!userPetId) return;
@@ -158,6 +170,31 @@ const DashboardContent = () => {
                 <h1>Descubre Mascotas</h1>
                 <p>Encuentra el compañero de juegos perfecto para tu mascota</p>
               </div>
+
+              {/* Selector de mascota activa */}
+              {myPets.length > 0 && (
+                <div className="pet-selector">
+                  <span className="pet-selector-label">Matching con:</span>
+                  <div className="pet-selector-list">
+                    {myPets.map((pet, idx) => (
+                      <button
+                        key={pet.mascota_id}
+                        className={`pet-selector-btn${idx === activePetIdx ? ' active' : ''}`}
+                        onClick={() => handleSelectPet(idx)}
+                        title={pet.nombre}
+                      >
+                        {pet.foto_url ? (
+                          <img src={pet.foto_url} alt={pet.nombre} />
+                        ) : (
+                          <span className="pet-selector-icon">🐾</span>
+                        )}
+                        <span>{pet.nombre}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="dashboard-content">
                 {loadingPets ? (
                   <div className="no-more-pets">

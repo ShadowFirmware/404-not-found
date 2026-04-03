@@ -69,6 +69,10 @@ const PetCard = ({ pet, onSwipe }) => {
           onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x300?text=Sin+foto'; }}
         />
 
+        {pet.likedMe && (
+          <div className="liked-me-badge">❤️ Ya te dio like</div>
+        )}
+
         <motion.div className="swipe-indicator reject-indicator" style={{ opacity: rejectOpacity }}>
           <X size={60} />
         </motion.div>
