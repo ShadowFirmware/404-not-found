@@ -242,6 +242,272 @@
 }
 
 /* ========================================
+   CSS DOG CHARACTER
+   ======================================== */
+
+.css-dog {
+  position: relative;
+  width: 130px;
+  height: 90px;
+}
+
+/* ── Body ── */
+.d-body {
+  position: absolute;
+  width: 72px;
+  height: 38px;
+  background: #c8854a;
+  border-radius: 40% 50% 50% 40% / 60% 60% 50% 50%;
+  bottom: 18px;
+  left: 30px;
+  box-shadow: inset 0 -4px 8px rgba(0,0,0,0.25);
+}
+
+/* ── Tail ── */
+.d-tail {
+  position: absolute;
+  width: 10px;
+  height: 36px;
+  background: #c8854a;
+  border-radius: 6px 6px 0 0;
+  bottom: 34px;
+  left: 22px;
+  transform-origin: bottom center;
+  animation: tail-wag 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes tail-wag {
+  from { transform: rotate(-40deg); }
+  to   { transform: rotate(12deg);  }
+}
+
+.pose-sniff .d-tail {
+  animation: tail-sniff 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes tail-sniff {
+  from { transform: rotate(-10deg); }
+  to   { transform: rotate(45deg);  }
+}
+
+/* ── Head group (rotates when sniffing) ── */
+.d-head-group {
+  position: absolute;
+  bottom: 28px;
+  left: 88px;
+  transform-origin: bottom left;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pose-sniff .d-head-group {
+  transform: rotate(38deg);
+}
+
+/* ── Head ── */
+.d-head {
+  position: relative;
+  width: 44px;
+  height: 38px;
+  background: #c8854a;
+  border-radius: 45% 50% 55% 45% / 50% 50% 55% 50%;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.15);
+}
+
+/* ── Ear ── */
+.d-ear {
+  position: absolute;
+  width: 18px;
+  height: 26px;
+  background: #a8652a;
+  border-radius: 0 0 50% 50%;
+  top: -10px;
+  right: 3px;
+  transform: rotate(12deg);
+}
+
+/* ── Eye ── */
+.d-eye {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-radius: 50%;
+  top: 10px;
+  right: 9px;
+}
+
+/* ── Pupil ── */
+.d-pupil {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #1a0a00;
+  border-radius: 50%;
+  top: 12px;
+  right: 11px;
+}
+
+/* ── Nose ── */
+.d-nose {
+  position: absolute;
+  width: 14px;
+  height: 9px;
+  background: #2c1810;
+  border-radius: 50% 50% 60% 60%;
+  bottom: 6px;
+  right: -4px;
+}
+
+/* ── Sniff particles ── */
+.d-sniff-1,
+.d-sniff-2,
+.d-sniff-3 {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.d-sniff-1 { width: 6px;  height: 6px;  bottom: 8px;  right: -16px; }
+.d-sniff-2 { width: 8px;  height: 8px;  bottom: 14px; right: -22px; }
+.d-sniff-3 { width: 5px;  height: 5px;  bottom: 20px; right: -12px; }
+
+.pose-sniff .d-sniff-1 { animation: sniff-puff 1.1s 0.0s ease-out infinite; }
+.pose-sniff .d-sniff-2 { animation: sniff-puff 1.1s 0.2s ease-out infinite; }
+.pose-sniff .d-sniff-3 { animation: sniff-puff 1.1s 0.4s ease-out infinite; }
+
+@keyframes sniff-puff {
+  0%   { opacity: 0.75; transform: translate(0, 0) scale(1);   }
+  100% { opacity: 0;    transform: translate(8px, -16px) scale(2.8); }
+}
+
+/* ── Legs ── */
+.d-leg {
+  position: absolute;
+  width: 13px;
+  height: 24px;
+  background: #b8743a;
+  border-radius: 3px 3px 7px 7px;
+  bottom: 0;
+  transform-origin: top center;
+}
+
+.d-fl { left: 88px; animation: leg-a 0.48s linear infinite; }
+.d-fr { left: 76px; animation: leg-b 0.48s linear infinite; }
+.d-bl { left: 40px; animation: leg-b 0.48s linear infinite; }
+.d-br { left: 28px; animation: leg-a 0.48s linear infinite; }
+
+@keyframes leg-a {
+  0%   { transform: rotate(  0deg); }
+  25%  { transform: rotate( 28deg); }
+  50%  { transform: rotate(  0deg); }
+  75%  { transform: rotate(-28deg); }
+  100% { transform: rotate(  0deg); }
+}
+
+@keyframes leg-b {
+  0%   { transform: rotate(  0deg); }
+  25%  { transform: rotate(-28deg); }
+  50%  { transform: rotate(  0deg); }
+  75%  { transform: rotate( 28deg); }
+  100% { transform: rotate(  0deg); }
+}
+
+.pose-sniff .d-leg {
+  animation: none;
+}
+
+/* ── Fourth-wall overlay ── */
+.fw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  backdrop-filter: blur(1px);
+}
+
+.fw-fog {
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(200, 133, 74, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.fw-nose-smudge {
+  position: absolute;
+  width: 70px;
+  height: 44px;
+  background: rgba(200, 133, 74, 0.28);
+  border-radius: 50%;
+  filter: blur(10px);
+  bottom: calc(8% + 40px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.fw-bubble {
+  position: absolute;
+  bottom: calc(8% + 230px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.94);
+  color: #1a0a00;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 20px;
+  white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.fw-bubble-arrow {
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 11px solid rgba(255, 255, 255, 0.94);
+}
+
+/* ── Static illustration column decorations ── */
+.paw-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 60px rgba(236, 72, 153, 0.1),
+              0 0 0 1px rgba(236, 72, 153, 0.08);
+}
+
+.paw-big {
+  font-size: 88px;
+  line-height: 1;
+  filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.5));
+}
+
+.dog-hint {
+  margin-top: 18px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+
+/* ========================================
    ERROR 500 - GATO ELECTROCUTADO
    ======================================== */
 
