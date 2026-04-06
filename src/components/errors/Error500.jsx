@@ -1,316 +1,177 @@
 import { motion } from 'framer-motion';
-import { Home, RefreshCw, Zap } from 'lucide-react';
+import { Home, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './ErrorPages.css';
 
+/* ─────────────────────────────────────────
+   Floating lightning particles
+   ───────────────────────────────────────── */
+const BOLTS = Array.from({ length: 14 }, (_, i) => ({
+  left: `${(i * 7.4 + 2) % 100}%`,
+  top:  `${(i * 11 + 4) % 88}%`,
+  size: 14 + (i % 4) * 6,
+  dur:  2 + (i % 3) * 0.7,
+  del:  i * 0.35,
+}));
+
+/* ─────────────────────────────────────────
+   SVG Shocked Cat
+   ───────────────────────────────────────── */
+const ShockedCat = () => (
+  <motion.div
+    className="shocked-cat-wrap"
+    animate={{ x: [-1, 1.5, -2, 2, -1, 1, 0], y: [0, -1, 1, -1, 0] }}
+    transition={{ duration: 0.16, repeat: Infinity, repeatDelay: 0.5 }}
+  >
+    <svg viewBox="0 0 200 200" width="220" height="220" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+      {/* Tail – zigzag/electric shape */}
+      <path
+        className="cat-tail-svg"
+        d="M 35 158 Q 18 136 26 114 Q 36 92 18 72 Q 6 56 16 40"
+        stroke="#c2590a" strokeWidth="12" fill="none"
+        strokeLinecap="round" strokeLinejoin="round"
+      />
+
+      {/* Body */}
+      <ellipse cx="118" cy="140" rx="52" ry="30" fill="#f97316"/>
+      {/* Belly */}
+      <ellipse cx="122" cy="146" rx="34" ry="20" fill="#fcd9b0"/>
+
+      {/* Back legs (behind body) */}
+      <g className="cat-bl"><rect x="76"  y="162" width="16" height="24" rx="6" fill="#c2590a"/></g>
+      <g className="cat-br"><rect x="96"  y="162" width="16" height="24" rx="6" fill="#e86a10"/></g>
+      {/* Front legs */}
+      <g className="cat-fl"><rect x="134" y="162" width="16" height="24" rx="6" fill="#c2590a"/></g>
+      <g className="cat-fr"><rect x="154" y="162" width="16" height="24" rx="6" fill="#e86a10"/></g>
+
+      {/* Neck */}
+      <ellipse cx="146" cy="118" rx="18" ry="16" fill="#f97316"/>
+
+      {/* Head */}
+      <ellipse cx="146" cy="84"  rx="38" ry="34" fill="#f97316"/>
+
+      {/* Ears – pointy */}
+      <polygon points="118,66 106,32 130,58" fill="#c2590a"/>
+      <polygon points="120,64 110,40 128,56" fill="#fca5a5"/>
+      <polygon points="168,66 180,32 158,58" fill="#c2590a"/>
+      <polygon points="166,64 176,40 160,56" fill="#fca5a5"/>
+
+      {/* Electric fur strands on top of head */}
+      <g className="cat-fur">
+        <rect x="122" y="42" width="6" height="20" rx="3" fill="#f97316" transform="rotate(-22 125 52)"/>
+        <rect x="132" y="37" width="6" height="24" rx="3" fill="#f97316" transform="rotate(-9  135 49)"/>
+        <rect x="143" y="35" width="6" height="26" rx="3" fill="#f97316" transform="rotate( 0  146 48)"/>
+        <rect x="154" y="37" width="6" height="24" rx="3" fill="#f97316" transform="rotate( 9  157 49)"/>
+        <rect x="163" y="42" width="6" height="20" rx="3" fill="#f97316" transform="rotate(22 166 52)"/>
+      </g>
+
+      {/* Eyes – shocked spirals */}
+      <circle cx="130" cy="78" r="12" fill="white" stroke="#2c1810" strokeWidth="1.5"/>
+      <text className="cat-eye-l" x="130" y="84" textAnchor="middle" fontSize="15" fill="#2c1810" fontWeight="900">@</text>
+      <circle cx="162" cy="78" r="12" fill="white" stroke="#2c1810" strokeWidth="1.5"/>
+      <text className="cat-eye-r" x="162" y="84" textAnchor="middle" fontSize="15" fill="#2c1810" fontWeight="900">@</text>
+
+      {/* Nose */}
+      <ellipse cx="146" cy="94" rx="5.5" ry="3.5" fill="#2c1810"/>
+
+      {/* Mouth – shocked open oval */}
+      <ellipse cx="146" cy="106" rx="10" ry="8" fill="#2c1810"/>
+      <ellipse cx="146" cy="107" rx="6.5" ry="4.5" fill="#a34706"/>
+
+      {/* Electric sparks around cat */}
+      <text className="cat-spark-1" x="178" y="54"  fontSize="20">⚡</text>
+      <text className="cat-spark-2" x="96"  y="60"  fontSize="17">⚡</text>
+      <text className="cat-spark-3" x="182" y="120" fontSize="15">⚡</text>
+      <text className="cat-spark-4" x="84"  y="122" fontSize="13">⚡</text>
+      <text className="cat-spark-5" x="148" y="30"  fontSize="14">⚡</text>
+    </svg>
+  </motion.div>
+);
+
+/* ─────────────────────────────────────────
+   Page
+   ───────────────────────────────────────── */
 const Error500 = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="error-page-500">
-      {/* Chispas eléctricas flotantes */}
-      <div className="electric-sparks">
-        {[...Array(15)].map((_, i) => (
-          <motion.div
+    <div className="error-page-500-new">
+      {/* Ambient lightning particles */}
+      <div className="bolts-bg" aria-hidden>
+        {BOLTS.map((b, i) => (
+          <motion.span
             key={i}
-            className="spark"
-            initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: [0, 1, 0],
-              scale: [0, 1.5, 0],
-              y: [0, -50, -100]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              delay: i * 0.3
-            }}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${50 + Math.random() * 50}%`,
-            }}
-          >
-            ⚡
-          </motion.div>
+            className="bolt-bg-item"
+            style={{ left: b.left, top: b.top, fontSize: b.size }}
+            animate={{ y: [0, -20, 0], opacity: [0.04, 0.14, 0.04] }}
+            transition={{ duration: b.dur, repeat: Infinity, delay: b.del, ease: 'easeInOut' }}
+          >⚡</motion.span>
         ))}
       </div>
 
-      <div className="error-content-500">
-        {/* Gato electrocutado */}
-        <div className="illustration-500">
-          <motion.div 
-            className="shocked-cat"
-            animate={{
-              x: [-2, 2, -2, 2, 0],
-              rotate: [-1, 1, -1, 1, 0]
-            }}
-            transition={{
-              duration: 0.5,
-              repeat: Infinity,
-              repeatDelay: 1
-            }}
-          >
-            {/* Cuerpo del gato */}
-            <div className="cat-body-500">
-              {/* Cabeza */}
-              <div className="cat-head-500">
-                {/* Orejas */}
-                <div className="cat-ear-500 left"></div>
-                <div className="cat-ear-500 right"></div>
-                
-                {/* Cara */}
-                <div className="cat-face-500">
-                  {/* Ojos electrocutados */}
-                  <motion.div 
-                    className="cat-eye-500 left"
-                    animate={{ 
-                      scale: [1, 1.3, 1],
-                      rotate: [0, 180, 360]
-                    }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                  >
-                    <div className="eye-spiral">@</div>
-                  </motion.div>
-                  <motion.div 
-                    className="cat-eye-500 right"
-                    animate={{ 
-                      scale: [1, 1.3, 1],
-                      rotate: [0, -180, -360]
-                    }}
-                    transition={{ duration: 0.8, repeat: Infinity }}
-                  >
-                    <div className="eye-spiral">@</div>
-                  </motion.div>
-                  
-                  {/* Nariz y boca */}
-                  <div className="cat-nose-500"></div>
-                  <motion.div 
-                    className="cat-mouth-500"
-                    animate={{ scaleX: [1, 1.2, 1] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
-                  ></motion.div>
-                </div>
+      <div className="blob-500-1" />
+      <div className="blob-500-2" />
 
-                {/* Pelo parado */}
-                <div className="shocked-fur">
-                  {[...Array(8)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="fur-strand"
-                      animate={{ 
-                        y: [-5, -10, -5],
-                        rotate: [i * 10 - 40, i * 10 - 35, i * 10 - 40]
-                      }}
-                      transition={{ 
-                        duration: 0.3,
-                        repeat: Infinity,
-                        delay: i * 0.05
-                      }}
-                      style={{ left: `${i * 12}%` }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Cuerpo */}
-              <div className="cat-torso-500"></div>
-
-              {/* Patas temblando */}
-              <div className="cat-legs-500">
-                <motion.div 
-                  className="cat-leg-500"
-                  animate={{ scaleY: [1, 0.9, 1] }}
-                  transition={{ duration: 0.2, repeat: Infinity }}
-                ></motion.div>
-                <motion.div 
-                  className="cat-leg-500"
-                  animate={{ scaleY: [1, 0.9, 1] }}
-                  transition={{ duration: 0.2, repeat: Infinity, delay: 0.1 }}
-                ></motion.div>
-              </div>
-
-              {/* Cola eléctrica */}
-              <motion.div 
-                className="cat-tail-500"
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scaleY: [1, 1.1, 0.9, 1]
-                }}
-                transition={{ duration: 0.3, repeat: Infinity }}
-              ></motion.div>
-            </div>
-
-            {/* Cables enredados */}
-            <div className="tangled-cables">
-              <motion.div 
-                className="cable cable-1"
-                animate={{ pathLength: [0, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              ></motion.div>
-              <motion.div 
-                className="cable cable-2"
-                animate={{ pathLength: [0, 1] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-              ></motion.div>
-              <motion.div 
-                className="cable cable-3"
-                animate={{ pathLength: [0, 1] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.6 }}
-              ></motion.div>
-            </div>
-
-            {/* Chispas alrededor del gato */}
-            <div className="cat-sparks">
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="mini-spark"
-                  animate={{ 
-                    scale: [0, 1, 0],
-                    opacity: [0, 1, 0]
-                  }}
-                  transition={{
-                    duration: 0.8,
-                    repeat: Infinity,
-                    delay: i * 0.2
-                  }}
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                  }}
-                >
-                  ⚡
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Servidor humeante */}
-          <div className="server-box">
-            <div className="server-front">
-              <div className="server-lights">
-                <motion.div 
-                  className="light red"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                ></motion.div>
-                <motion.div 
-                  className="light red"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
-                ></motion.div>
-                <motion.div 
-                  className="light red"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 0.5, repeat: Infinity, delay: 0.4 }}
-                ></motion.div>
-              </div>
-            </div>
-            {/* Humo */}
-            <div className="smoke-container">
-              {[...Array(3)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="smoke"
-                  animate={{ 
-                    y: [0, -60],
-                    opacity: [0.7, 0],
-                    scale: [0.5, 1.5]
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    delay: i * 0.8
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+      {/* Main layout */}
+      <div className="error-layout-500">
+        {/* Left: cat illustration */}
+        <div className="error-illustration-col-500">
+          <ShockedCat />
+          <p className="cat-hint">
+            <motion.span
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+            >
+              ⚡ ¡Solo quería jugar con los cables!
+            </motion.span>
+          </p>
         </div>
 
-        {/* Texto del error */}
-        <motion.div 
-          className="error-text-500"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
+        {/* Right: text */}
+        <motion.div
+          className="error-text-col-500"
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <motion.h1 
-            className="error-code-500"
-            animate={{ 
-              textShadow: [
-                "0 0 10px #ff6b6b",
-                "0 0 20px #ff6b6b",
-                "0 0 10px #ff6b6b"
-              ]
-            }}
-            transition={{ duration: 1, repeat: Infinity }}
+          <motion.h1
+            className="error-code-500-new"
+            animate={{ scale: [1, 1.03, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
           >
-            5<span className="zero-500">0</span>0
+            5<span className="zero-500-new">0</span>0
           </motion.h1>
-          
-          <h2 className="error-title-500">¡SERVIDOR ELECTROCUTADO!</h2>
-          
-          <p className="error-message-500">
-            ¡Ups! Un gato curioso metió las patas donde no debía... ⚡<br/>
-            <strong>¡Y ahora todo está en corto circuito!</strong>
+
+          <div className="error-tag-500">Error del servidor</div>
+
+          <h2 className="error-title-500-new">¡El servidor se electrocutó!</h2>
+
+          <p className="error-message-500-new">
+            Un gatito curioso metió las patas donde no debía y ahora
+            todo está en cortocircuito. Nuestro equipo ya está
+            desconectando al culpable del rack de servidores.
           </p>
 
-          <div className="error-subtitle-500">
-            <motion.span
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              😱 Los cables nunca fueron buenos juguetes...
-            </motion.span>
-          </div>
-
-          {/* Botones */}
-          <div className="error-buttons-500">
+          <div className="error-buttons-500-new">
             <motion.button
-              className="btn-500 btn-reload"
+              className="btn-500-new btn-primary-500-new"
               onClick={() => window.location.reload()}
               whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.96 }}
             >
-              <RefreshCw size={22} />
-              <span>Reintentar</span>
+              <RefreshCw size={20} /> Reintentar
             </motion.button>
-            
             <motion.button
-              className="btn-500 btn-home-500"
+              className="btn-500-new btn-ghost-500-new"
               onClick={() => navigate('/dashboard')}
               whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.96 }}
             >
-              <Home size={22} />
-              <span>Ir a Inicio</span>
+              <Home size={20} /> Ir al inicio
             </motion.button>
           </div>
 
-          {/* Mensaje divertido */}
-          <motion.div 
-            className="fun-message-500"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-          >
-            <div className="speech-bubble-500">
-              <p>"¡Miau! Solo quería jugar con los cables brillantes... 😿⚡"</p>
-              <div className="bubble-arrow-500"></div>
-            </div>
-          </motion.div>
-
-          {/* Status */}
-          <motion.div 
-            className="server-status"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-          >
-            <Zap size={18} className="zap-icon" />
-            <span>Nuestro equipo está desconectando al gato del servidor...</span>
-          </motion.div>
+          <p className="error-hint-500">Error 500 · PawMatch</p>
         </motion.div>
       </div>
     </div>
