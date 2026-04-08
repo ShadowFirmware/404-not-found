@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Camera, Save, X, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -26,6 +26,10 @@ const ProfileSettings = () => {
   });
   const [photoPreview, setPhotoPreview] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
+  const [showPositionModal, setShowPositionModal] = useState(false);
+  const [tempPosition, setTempPosition] = useState({ x: 50, y: 50 });
+  const [frameDragging, setFrameDragging] = useState(false);
+  const stageRef = useRef(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -84,10 +88,54 @@ const ProfileSettings = () => {
     const file = e.target.files[0];
     if (!file) return;
     setPhotoFile(file);
+    setTempPosition({ x: 50, y: 50 });
     const reader = new FileReader();
-    reader.onloadend = () => setPhotoPreview(reader.result);
+    reader.onloadend = () => { setPhotoPreview(reader.result); setShowPositionModal(true); };
     reader.readAsDataURL(file);
   };
+
+  const onFrameMouseDown = (e) => { e.preventDefault(); e.stopPropagation(); setFrameDragging(true); };
+
+  const onStageMouseMove = (e) => {
+    if (!frameDragging || !stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    const frameRadius = 80;
+    const cx = Math.max(frameRadius, Math.min(rect.width - frameRadius, e.clientX - rect.left));
+    const cy = Math.max(frameRadius, Math.min(rect.height - frameRadius, e.clientY - rect.top));
+    setTempPosition({ x: (cx / rect.width) * 100, y: (cy / rect.height) * 100 });
+  };
+
+  const onStageMouseUp = () => setFrameDragging(false);
+
+  const handleConfirmPosition = async () => {
+    const img = new Image();
+    img.src = photoPreview;
+    await new Promise((resolve) => { img.onload = resolve; });
+
+    const stageSize = 272;
+    const frameSize = 160;
+    const cx = (tempPosition.x / 100) * stageSize;
+    const cy = (tempPosition.y / 100) * stageSize;
+    const scale = Math.max(stageSize / img.naturalWidth, stageSize / img.naturalHeight);
+    const ox = (img.naturalWidth * scale - stageSize) / 2;
+    const oy = (img.naturalHeight * scale - stageSize) / 2;
+    const srcX = (cx - frameSize / 2 + ox) / scale;
+    const srcY = (cy - frameSize / 2 + oy) / scale;
+    const srcSize = frameSize / scale;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    canvas.getContext('2d').drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, 200, 200);
+
+    const croppedUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const blob = await fetch(croppedUrl).then((r) => r.blob());
+    setPhotoPreview(croppedUrl);
+    setPhotoFile(new File([blob], photoFile?.name || 'profile.jpg', { type: 'image/jpeg' }));
+    setShowPositionModal(false);
+  };
+
+  const handleCancelPosition = () => { setShowPositionModal(false); };
 
   const validateAll = () => {
     const newErrors = {};
@@ -108,9 +156,8 @@ const ProfileSettings = () => {
     setSaving(true);
     try {
       const payload = { ...formData };
-      // Si hay foto nueva, convertirla a base64 string
       if (photoFile) {
-        payload.foto_perfil = photoPreview; // base64 desde FileReader
+        payload.foto_perfil = photoPreview;
       }
       await authService.updateProfile(payload);
       setOriginal(formData);
@@ -156,7 +203,12 @@ const ProfileSettings = () => {
             <h2 className="section-title">Foto de Perfil</h2>
             <div className="profile-photo-section">
               <div className="profile-photo-wrapper">
-                <img src={photoPreview} alt="Foto de perfil" className="profile-photo" />
+                <img
+                  src={photoPreview}
+                  alt="Foto de perfil"
+                  className="profile-photo"
+                  draggable={false}
+                />
                 <button type="button" className="change-photo-btn" onClick={() => document.getElementById('photoInput').click()}>
                   <Camera size={20} />
                 </button>
@@ -263,6 +315,33 @@ const ProfileSettings = () => {
           Cerrar Sesión
         </button>
       </div>
+
+      {showPositionModal && (
+        <div className="position-modal-overlay" onClick={handleCancelPosition}>
+          <div className="position-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="position-modal-title">Reposicionar foto</h3>
+            <p className="position-modal-hint">Arrastra el marco para elegir qué parte mostrar</p>
+            <div
+              ref={stageRef}
+              className="position-modal-stage"
+              onMouseMove={onStageMouseMove}
+              onMouseUp={onStageMouseUp}
+              onMouseLeave={onStageMouseUp}
+            >
+              <img src={photoPreview} alt="Preview" draggable={false} />
+              <div
+                className="position-modal-frame"
+                style={{ left: `${tempPosition.x}%`, top: `${tempPosition.y}%`, cursor: frameDragging ? 'grabbing' : 'grab' }}
+                onMouseDown={onFrameMouseDown}
+              />
+            </div>
+            <div className="position-modal-actions">
+              <button type="button" className="btn-position-cancel" onClick={handleCancelPosition}>Cancelar</button>
+              <button type="button" className="btn-position-confirm" onClick={handleConfirmPosition}>Aplicar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
