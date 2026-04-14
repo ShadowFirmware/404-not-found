@@ -65,15 +65,31 @@ const LocationPermission = () => {
         backgroundColor: 'black',
         backgroundImage: `linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.7)),url(${dashImage})`,
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: 0, padding: 20, overflow: 'hidden',
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'flex-start', /* ✅ Permite scroll desde arriba */
+        margin: 0, 
+        padding: '80px 20px 40px', /* ✅ Espacio para logo + scroll inferior */
+        overflowY: 'auto', /* ✅ Scroll vertical activado */
+        overflowX: 'hidden',
       }}
     >
-      <div style={{ position: 'absolute', top: '40px', left: '60px' }}>
+      {/* Logo fijo arriba */}
+      <div style={{ position: 'absolute', top: '20px', left: '60px', zIndex: 100001 }}>
         <span style={{ color: 'white', fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>PAWMATCH</span>
       </div>
 
-      <div style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100000 }}>
+      {/* Contenido con scroll */}
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '500px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        zIndex: 100000,
+        paddingBottom: '40px' /* ✅ Espacio extra al final del scroll */
+      }}>
         <motion.div
           initial={{ scale: 0 }} animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
