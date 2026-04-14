@@ -14,49 +14,45 @@
   margin-bottom: 12px;
 }
 
-.theme-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.theme-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* ✅ Select dinámico (reemplaza a .theme-options) */
+.theme-select {
+  width: 100%;
   padding: 10px 12px;
-  background: none;
-  border: 1px solid var(--border-color);
+  border: 1px solid; /* Hereda el color del inline-style */
   border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.theme-option:hover {
-  background-color: var(--hover-color);
-  border-color: var(--primary-color);
-}
-
-.theme-option.active {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: #ffffff;
-}
-
-.theme-color-preview {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.theme-name {
   font-size: 14px;
   font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  appearance: none;
+  /* Flecha adaptativa: usa currentColor para coincidir con el texto del tema */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 36px;
 }
 
-.theme-option.active .theme-name {
-  color: #ffffff;
+.theme-select:hover {
+  opacity: 0.85;
+}
+
+.theme-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(100, 100, 100, 0.25);
+}
+
+/* Los <option> usan estilos nativos del SO, pero forzamos un fondo limpio */
+.theme-select option {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 8px;
+}
+
+/* 🌙 Ajuste opcional si el usuario tiene modo oscuro en su navegador/SO */
+@media (prefers-color-scheme: dark) {
+  .theme-select option {
+    background-color: #1e1e2f;
+    color: #ffffff;
+  }
 }
