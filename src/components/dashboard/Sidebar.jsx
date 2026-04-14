@@ -4,10 +4,10 @@ import './Sidebar.css';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
-    { id: 'home', label: 'Inicio / Dashboard', icon: Home },
+    { id: 'home', label: 'Inicio', icon: Home },
     { id: 'pets', label: 'Mis Mascotas', icon: PawPrint },
     { id: 'matches', label: 'Matches', icon: Heart },
-    { id: 'chats', label: 'Mensajes / Chat', icon: MessageCircle },
+    { id: 'chats', label: 'Mensajes', icon: MessageCircle },
     { id: 'settings', label: 'Configuración de Perfil', icon: Settings }
   ];
 
