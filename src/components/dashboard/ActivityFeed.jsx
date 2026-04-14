@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { matchService } from '../../services/matchService';
 import { useChat } from '../../context/ChatContext';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import { useRefreshOn } from '../../context/RefreshContext';
 import NotificationsPanel from './NotificationsPanel';
 import './ActivityFeed.css';
 
@@ -37,7 +38,10 @@ const ActivityFeed = ({ setActiveTab }) => {
     finally { setLoading(false); }
   }, []);
 
-  useAutoRefresh(load, 30000);
+  // Polling de seguridad cada 10s
+  useAutoRefresh(load, 10000);
+  // Refresco inmediato al recibir evento 'activity'
+  useRefreshOn('activity', load);
 
   // Badge: mensajes no leídos + actividad nueva en el feed
   const unreadMessages = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);

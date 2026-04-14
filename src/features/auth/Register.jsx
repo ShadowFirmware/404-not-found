@@ -68,7 +68,11 @@ const Register = () => {
         }
         return String(val);
       };
-      setError(extractMsg(data) || 'Error al registrarse. Intenta de nuevo.');
+      const detail = data?.detail;
+      const msg = detail && typeof detail === 'object' && Object.keys(detail).length > 0
+        ? extractMsg(Object.values(detail)[0])
+        : extractMsg(data?.error) || extractMsg(data);
+      setError(msg || 'Error al registrarse. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }

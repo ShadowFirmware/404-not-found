@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, MoreVertical, Trash2, ArrowRight } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import toast from 'react-hot-toast';
 import './ChatWindow.css';
@@ -151,14 +151,32 @@ const ChatWindow = () => {
       {/* Header del chat */}
       <div className="chat-window-header">
         <div className="chat-window-info">
-          <img 
-            src={currentConversation.petImage} 
-            alt={currentConversation.petName}
-            className="chat-avatar"
-          />
-          <div>
-            <h3>{currentConversation.petName}</h3>
-            <p className="owner-name">{currentConversation.ownerName}</p>
+          {/* Match: mi mascota → otra mascota */}
+          <div className="chat-match-avatars">
+            {currentConversation.myPetImage && (
+              <img
+                src={currentConversation.myPetImage}
+                alt={currentConversation.myPetName}
+                className="chat-avatar chat-avatar-mine"
+                title={`Tu mascota: ${currentConversation.myPetName}`}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            )}
+            <ArrowRight size={14} className="chat-match-arrow" />
+            <img
+              src={currentConversation.petImage}
+              alt={currentConversation.petName}
+              className="chat-avatar"
+              onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=🐾'; }}
+            />
+          </div>
+          <div className="chat-header-names">
+            <h3>
+              {currentConversation.myPetName
+                ? `${currentConversation.myPetName} · ${currentConversation.petName}`
+                : currentConversation.petName}
+            </h3>
+            <p className="owner-name">Dueño: {currentConversation.ownerName}</p>
           </div>
         </div>
 

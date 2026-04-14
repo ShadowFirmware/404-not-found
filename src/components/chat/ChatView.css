@@ -1,7 +1,7 @@
 /* ── Layout principal split ── */
 .chat-layout {
   display: flex;
-  height: 100vh;
+  height: 100%;          /* era 100vh — ahora relativo al contenedor padre */
   width: 100%;
   overflow: hidden;
   background-color: var(--background-color);
@@ -234,3 +234,39 @@
 .conversations-list::-webkit-scrollbar { width: 4px; }
 .conversations-list::-webkit-scrollbar-track { background: transparent; }
 .conversations-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+/* ─────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .chat-panel-left {
+    width: 260px;
+    min-width: 220px;
+  }
+}
+
+/* Mobile: lista de conversaciones ocupa todo el ancho,
+   panel de chat se muestra encima cuando hay chat activo */
+@media (max-width: 580px) {
+  .chat-layout {
+    flex-direction: column;
+  }
+
+  .chat-panel-left {
+    width: 100%;
+    min-width: unset;
+    height: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  /* Ocultar lista cuando hay un chat abierto */
+  .chat-layout:has(.chat-window) .chat-panel-left {
+    display: none;
+  }
+
+  .chat-panel-right {
+    width: 100%;
+    height: 100%;
+  }
+}

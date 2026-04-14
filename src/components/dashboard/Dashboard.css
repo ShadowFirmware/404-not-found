@@ -1,6 +1,8 @@
+/* ── Estructura base ── */
 .dashboard {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background-color: var(--background-color);
 }
 
@@ -8,25 +10,49 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;        /* evita overflow en flex */
   overflow: hidden;
 }
 
+/* Wrapper de cada tab — scrollable por defecto */
+.dashboard-content-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Para el tab de chat: sin scroll propio (el chat maneja su propio overflow) */
+.dashboard-content-wrapper.no-scroll {
+  overflow: hidden;
+}
+
+.dashboard-content-wrapper::-webkit-scrollbar { width: 4px; }
+.dashboard-content-wrapper::-webkit-scrollbar-track { background: transparent; }
+.dashboard-content-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* ── Header de la vista home ── */
 .dashboard-header {
-  padding: 32px 40px;
+  padding: 28px 40px 20px;
   background-color: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .dashboard-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+  margin: 0 0 6px 0;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-color);
 }
 
 .dashboard-header p {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-secondary);
 }
 
@@ -35,10 +61,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 40px;
+  padding: 10px 40px;
   background-color: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .pet-selector-label {
@@ -87,16 +114,13 @@
   color: #fff;
 }
 
-
+/* ── Contenido home (PetCard centrada) ── */
 .dashboard-content {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
+  padding: 32px 40px;
 }
 
 .no-more-pets {
@@ -104,81 +128,109 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
+  min-height: 360px;
   background-color: var(--card-bg);
   border-radius: 20px;
   padding: 60px 40px;
   text-align: center;
-  max-width: 500px;
+  max-width: 480px;
+  width: 100%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .no-pets-icon {
-  font-size: 80px;
-  margin-bottom: 24px;
+  font-size: 72px;
+  margin-bottom: 20px;
   opacity: 0.6;
 }
 
 .no-more-pets h2 {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-color);
-  margin: 0 0 12px 0;
+  margin: 0 0 10px 0;
 }
 
 .no-more-pets p {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--text-secondary);
   margin: 0;
+  line-height: 1.5;
 }
 
-/* Dashboard Sidebar (Stats + Activity) */
+/* ── Sidebar de stats (derecha) ── */
 .dashboard-sidebar {
-  width: 350px;
+  width: 340px;
   background-color: var(--background-color);
   padding: 20px;
   overflow-y: auto;
   border-left: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
-/* Responsive Design */
+/* ─────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────── */
+
+/* Tablets: ocultar stats panel */
+@media (max-width: 1200px) {
+  .dashboard-sidebar {
+    width: 300px;
+  }
+}
+
 @media (max-width: 1024px) {
   .dashboard-sidebar {
     display: none;
   }
 }
 
+/* Tablets pequeñas */
 @media (max-width: 768px) {
-  .dashboard {
-    flex-direction: column;
+  .dashboard-header {
+    padding: 20px 20px 16px;
   }
 
-  .sidebar {
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid #e5e7eb;
+  .dashboard-header h1 {
+    font-size: 22px;
   }
 
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 10px;
-  }
-
-  .nav-item {
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 16px;
-    font-size: 12px;
-    white-space: nowrap;
+  .pet-selector {
+    padding: 10px 20px;
   }
 
   .dashboard-content {
     padding: 20px;
+    align-items: flex-start;
+  }
+}
+
+/* Mobile — sidebar se convierte en bottom nav fija */
+@media (max-width: 640px) {
+  .dashboard {
+    flex-direction: column;
   }
 
-  .pet-card-image {
-    height: 300px;
+  .dashboard-main {
+    /* Dejar espacio para la bottom nav */
+    height: calc(100vh - 60px);
+    padding-bottom: 0;
+  }
+
+  .dashboard-header {
+    padding: 16px;
+  }
+
+  .pet-selector {
+    padding: 8px 16px;
+  }
+
+  .dashboard-content {
+    padding: 16px;
+  }
+
+  .no-more-pets {
+    min-height: 280px;
+    padding: 40px 24px;
   }
 }

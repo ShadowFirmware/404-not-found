@@ -24,10 +24,15 @@ export const SocketProvider = ({ children }) => {
    */
   const connectToChat = (matchId, handlers = {}) => {
     const token = localStorage.getItem('token');
-    const url = `${SOCKET_URL}/ws/chat/${matchId}/?token=${token}`;
+    // No exponer el token en la URL — se envía como primer mensaje al conectar
+    const url = `${SOCKET_URL}/ws/chat/${matchId}/`;
     const ws = new WebSocket(url);
 
-    if (handlers.onOpen)    ws.onopen    = handlers.onOpen;
+    ws.onopen = (event) => {
+      // Autenticar enviando el token como primer mensaje
+      ws.send(JSON.stringify({ type: 'authenticate', token }));
+      handlers.onOpen?.(event);
+    };
     if (handlers.onMessage) ws.onmessage = handlers.onMessage;
     if (handlers.onClose)   ws.onclose   = handlers.onClose;
     if (handlers.onError)   ws.onerror   = handlers.onError;

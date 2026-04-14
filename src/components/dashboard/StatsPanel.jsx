@@ -3,6 +3,7 @@ import { Heart, MessageCircle, PawPrint, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { matchService } from '../../services/matchService';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import { useRefreshOn } from '../../context/RefreshContext';
 import './StatsPanel.css';
 
 const StatsPanel = () => {
@@ -15,7 +16,10 @@ const StatsPanel = () => {
     } catch {}
   }, []);
 
-  useAutoRefresh(load, 30000);
+  // Polling de seguridad cada 10s
+  useAutoRefresh(load, 10000);
+  // Refresco inmediato al recibir evento 'stats'
+  useRefreshOn('stats', load);
 
   const statItems = [
     { icon: Heart,         label: 'Matches',        value: stats?.total_matches,   color: '#ff1e77', bgColor: 'rgba(255,30,119,0.1)' },

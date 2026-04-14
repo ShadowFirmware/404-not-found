@@ -13,6 +13,7 @@ import ChatView from '../chat/ChatView';
 import { ThemeProvider, useTheme } from '../../context/ThemeContext';
 import { MatchesProvider } from '../../context/MatchesContext';
 import { ChatProvider } from '../../context/ChatContext';
+import { RefreshProvider, useRefresh } from '../../context/RefreshContext';
 import { petService } from '../../services/petService';
 import { matchService } from '../../services/matchService';
 import './Dashboard.css';
@@ -54,9 +55,9 @@ const tabVariants = {
   exit:    { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
 
-const TabPane = ({ children, style }) => (
+const TabPane = ({ children, style, noScroll = false }) => (
   <motion.div
-    className="dashboard-content-wrapper"
+    className={`dashboard-content-wrapper${noScroll ? ' no-scroll' : ''}`}
     variants={tabVariants}
     initial="initial"
     animate="animate"
@@ -70,6 +71,7 @@ const TabPane = ({ children, style }) => (
 const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState('home');
   const { theme } = useTheme();
+  const { triggerRefresh } = useRefresh();
 
   // Mascotas propias para el selector
   const [myPets, setMyPets] = useState([]);
@@ -140,6 +142,14 @@ const DashboardContent = () => {
             style: { background: '#10b981', color: '#fff' },
             duration: 4000,
           });
+          // Match nuevo → actualizar stats + actividad + lista de matches
+          triggerRefresh('stats');
+          triggerRefresh('activity');
+          triggerRefresh('matches');
+        } else {
+          // Like enviado → puede aumentar likes_recibidos en el otro usuario;
+          // aquí solo refrescamos actividad local por si hay cambios
+          triggerRefresh('activity');
         }
       } catch { /* ignorar duplicados */ }
     } else {
@@ -171,19 +181,19 @@ const DashboardContent = () => {
       <div className="dashboard-main">
         <AnimatePresence mode="wait">
           {activeTab === 'pets' ? (
-            <TabPane key="pets" style={{ padding: '40px' }}>
+            <TabPane key="pets">
               <MyPets onPetChanged={loadMyPetsAndDiscover} />
             </TabPane>
           ) : activeTab === 'settings' ? (
-            <TabPane key="settings" style={{ padding: '40px' }}>
+            <TabPane key="settings">
               <ProfileSettings />
             </TabPane>
           ) : activeTab === 'matches' ? (
-            <TabPane key="matches" style={{ padding: '40px' }}>
+            <TabPane key="matches">
               <Matches userPetId={firstPetId} onOpenChat={() => setActiveTab('chats')} />
             </TabPane>
           ) : activeTab === 'chats' ? (
-            <TabPane key="chats" style={{ padding: '0', height: '100%' }}>
+            <TabPane key="chats" style={{ padding: '0', height: '100%' }} noScroll>
               <ChatView />
             </TabPane>
           ) : (
@@ -276,11 +286,13 @@ const DashboardContent = () => {
 
 const Dashboard = () => (
   <ThemeProvider>
-    <MatchesProvider>
-      <ChatProvider>
-        <DashboardContent />
-      </ChatProvider>
-    </MatchesProvider>
+    <RefreshProvider>
+      <MatchesProvider>
+        <ChatProvider>
+          <DashboardContent />
+        </ChatProvider>
+      </MatchesProvider>
+    </RefreshProvider>
   </ThemeProvider>
 );
 

@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { chatService } from '../services/chatService';
 import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
+import { useRefresh } from './RefreshContext';
 
 const ChatContext = createContext();
 
@@ -19,9 +20,12 @@ export const ChatProvider = ({ children }) => {
   const [activeChat, setActiveChat]         = useState(null);
   const [loadingConversations, setLoadingConversations] = useState(false);
 
-  const wsRef = useRef(null);
+  const wsRef              = useRef(null);
+  const reconnectTimerRef  = useRef(null);
+  const [wsVersion, setWsVersion] = useState(0); // incrementar fuerza reconexión
   const { isAuthenticated, user } = useAuth();
   const { connectToChat } = useSocket();
+  const refreshCtx = useRefresh();
 
   // ─── Limpiar todo el estado al cambiar de usuario (logout / cambio de cuenta)
   useEffect(() => {
@@ -45,9 +49,13 @@ export const ChatProvider = ({ children }) => {
 
       const mapped = data.map((conv) => ({
         matchId:         conv.match_id,
+        // Mascota del otro usuario
         petName:         conv.otra_mascota?.nombre   || 'Mascota',
         petImage:        conv.otra_mascota?.foto_url || 'https://via.placeholder.com/50',
         ownerName:       conv.otro_dueño?.nombre     || 'Usuario',
+        // Mi propia mascota en este match
+        myPetName:       conv.mi_mascota?.nombre     || '',
+        myPetImage:      conv.mi_mascota?.foto_url   || '',
         lastMessage:     conv.ultimo_mensaje?.contenido        || '',
         lastMessageTime: conv.ultimo_mensaje?.['fecha_envío']  || new Date().toISOString(),
         unreadCount:     conv.mensajes_no_leidos     || 0,
@@ -80,28 +88,27 @@ export const ChatProvider = ({ children }) => {
 
   // ─── Conectar WebSocket + cargar historial cuando cambia el chat activo ────
   useEffect(() => {
-    // Cerrar WebSocket anterior si lo hay
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    clearTimeout(reconnectTimerRef.current);
 
     if (!activeChat || !isAuthenticated) return;
+
+    const chatId = activeChat; // capturar para closure
 
     // 1. Cargar historial de mensajes via REST
     const loadHistory = async () => {
       try {
-        const data = await chatService.getMessages(activeChat);
+        const data = await chatService.getMessages(chatId);
         const mapped = data.map((msg) => ({
           id:         msg.msg_id,
-          matchId:    activeChat,
+          matchId:    chatId,
           text:       msg.contenido,
           sender:     msg.remitente === user?.dueño_id ? 'me' : msg.remitente,
           senderName: msg.remitente_nombre,
           timestamp:  msg['fecha_envío'],
           read:       msg['leído'],
+          pending:    false,
         }));
-        setMessages((prev) => ({ ...prev, [activeChat]: mapped }));
+        setMessages((prev) => ({ ...prev, [chatId]: mapped }));
       } catch (error) {
         console.error('Error cargando mensajes:', error);
       }
@@ -110,33 +117,63 @@ export const ChatProvider = ({ children }) => {
     loadHistory();
 
     // 2. Abrir WebSocket para mensajes en tiempo real
-    const ws = connectToChat(activeChat, {
+    const ws = connectToChat(chatId, {
       onMessage: (event) => {
         const data = JSON.parse(event.data);
 
         if (data.type === 'chat_message') {
+          const isFromMe = data.sender_id === user?.dueño_id;
           const newMsg = {
             id:         data.msg_id,
-            matchId:    activeChat,
+            matchId:    chatId,
             text:       data.message,
-            sender:     data.sender_id === user?.dueño_id ? 'me' : data.sender_id,
+            sender:     isFromMe ? 'me' : data.sender_id,
             senderName: data.sender_name,
             timestamp:  data.timestamp,
             read:       false,
+            pending:    false,
           };
 
-          setMessages((prev) => ({
-            ...prev,
-            [activeChat]: [...(prev[activeChat] || []), newMsg],
-          }));
+          setMessages((prev) => {
+            const current = prev[chatId] || [];
+
+            // Evitar duplicado (mismo msg_id ya en lista)
+            if (current.some((m) => m.id === data.msg_id)) return prev;
+
+            if (isFromMe) {
+              // Reemplazar el mensaje optimista pendiente con el confirmado
+              const pendingIdx = current.reduce(
+                (found, m, i) => (m.pending && m.text === data.message ? i : found),
+                -1
+              );
+              if (pendingIdx !== -1) {
+                const updated = [...current];
+                updated[pendingIdx] = newMsg;
+                return { ...prev, [chatId]: updated };
+              }
+            }
+
+            return { ...prev, [chatId]: [...current, newMsg] };
+          });
 
           setConversations((prev) =>
             prev.map((conv) =>
-              conv.matchId === activeChat
+              conv.matchId === chatId
                 ? { ...conv, lastMessage: data.message, lastMessageTime: data.timestamp }
                 : conv
             )
           );
+
+          refreshCtx?.triggerRefresh('activity');
+          refreshCtx?.triggerRefresh('stats');
+        }
+      },
+      onClose: (event) => {
+        // Reconectar automáticamente en cierres inesperados (no limpios)
+        if (event.code !== 1000 && event.code !== 1001) {
+          reconnectTimerRef.current = setTimeout(() => {
+            setWsVersion((v) => v + 1);
+          }, 3000);
         }
       },
       onError: (err) => console.error('WebSocket error:', err),
@@ -145,16 +182,42 @@ export const ChatProvider = ({ children }) => {
     wsRef.current = ws;
 
     return () => {
-      ws.close();
-      wsRef.current = null;
+      clearTimeout(reconnectTimerRef.current);
+      ws.close(1000, 'chat change');
+      if (wsRef.current === ws) wsRef.current = null;
     };
-  }, [activeChat, isAuthenticated]);
+  }, [activeChat, isAuthenticated, wsVersion]); // wsVersion fuerza reconexión
 
   // ─── Enviar mensaje (WebSocket primero, REST como fallback) ────────────────
   const sendMessage = async (matchId, messageText) => {
     const ws = wsRef.current;
 
     if (ws && ws.readyState === WebSocket.OPEN) {
+      // Mostrar mensaje al instante (optimistic update)
+      const tempId = `pending_${Date.now()}`;
+      const optimistic = {
+        id:         tempId,
+        matchId,
+        text:       messageText,
+        sender:     'me',
+        senderName: user?.nombre || 'Yo',
+        timestamp:  new Date().toISOString(),
+        read:       true,
+        pending:    true,
+      };
+      setMessages((prev) => ({
+        ...prev,
+        [matchId]: [...(prev[matchId] || []), optimistic],
+      }));
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.matchId === matchId
+            ? { ...conv, lastMessage: messageText, lastMessageTime: optimistic.timestamp }
+            : conv
+        )
+      );
+
+      // Enviar al servidor — el echo reemplazará el mensaje pendiente
       ws.send(
         JSON.stringify({
           type:     'chat_message',
@@ -163,16 +226,17 @@ export const ChatProvider = ({ children }) => {
         })
       );
     } else {
-      // Fallback: REST API
+      // Fallback: REST API (el servidor también hará broadcast al grupo WS)
       try {
         const msg = await chatService.sendMessage(matchId, messageText);
         const newMsg = {
-          id:        msg.msg_id,
+          id:      msg.msg_id,
           matchId,
-          text:      msg.contenido,
-          sender:    'me',
+          text:    msg.contenido,
+          sender:  'me',
           timestamp: msg['fecha_envío'],
-          read:      false,
+          read:    false,
+          pending: false,
         };
         setMessages((prev) => ({
           ...prev,
@@ -185,6 +249,7 @@ export const ChatProvider = ({ children }) => {
               : conv
           )
         );
+        refreshCtx?.triggerRefresh('stats');
       } catch (error) {
         console.error('Error enviando mensaje:', error);
       }

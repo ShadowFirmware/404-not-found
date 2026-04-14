@@ -19,7 +19,12 @@ export const authService = {
     return response.data;
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await api.post('/auth/logout/');
+    } catch {
+      // Ignorar errores — el token ya puede estar expirado
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   },
