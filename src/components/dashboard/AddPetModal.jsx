@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Upload } from 'lucide-react';
 import MapPicker from '../common/MapPicker';
 import './AddPetModal.css';
@@ -50,16 +50,59 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
     'Cariñoso'
   ];
 
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropPreview, setCropPreview] = useState('');
+  const [pendingFile, setPendingFile] = useState(null);
+  const [tempPosition, setTempPosition] = useState({ x: 50, y: 50 });
+  const [frameDragging, setFrameDragging] = useState(false);
+  const stageRef = useRef(null);
+
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({
-        ...formData,
-        photo: file,
-        photoPreview: URL.createObjectURL(file)
-      });
+      setPendingFile(file);
+      setTempPosition({ x: 50, y: 50 });
+      const reader = new FileReader();
+      reader.onloadend = () => { setCropPreview(reader.result); setShowCropModal(true); };
+      reader.readAsDataURL(file);
     }
   };
+
+  const onFrameMouseDown = (e) => { e.preventDefault(); e.stopPropagation(); setFrameDragging(true); };
+
+  const onStageMouseMove = (e) => {
+    if (!frameDragging || !stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    const frameW = 240, frameH = 200;
+    const cx = Math.max(frameW / 2, Math.min(rect.width - frameW / 2, e.clientX - rect.left));
+    const cy = Math.max(frameH / 2, Math.min(rect.height - frameH / 2, e.clientY - rect.top));
+    setTempPosition({ x: (cx / rect.width) * 100, y: (cy / rect.height) * 100 });
+  };
+
+  const onStageMouseUp = () => setFrameDragging(false);
+
+  const handleConfirmCrop = async () => {
+    const img = new Image();
+    img.src = cropPreview;
+    await new Promise((resolve) => { img.onload = resolve; });
+    const stageW = 270, stageH = 225, frameW = 240, frameH = 200;
+    const cx = (tempPosition.x / 100) * stageW;
+    const cy = (tempPosition.y / 100) * stageH;
+    const scale = Math.max(stageW / img.naturalWidth, stageH / img.naturalHeight);
+    const ox = (img.naturalWidth * scale - stageW) / 2;
+    const oy = (img.naturalHeight * scale - stageH) / 2;
+    const srcX = (cx - frameW / 2 + ox) / scale;
+    const srcY = (cy - frameH / 2 + oy) / scale;
+    const canvas = document.createElement('canvas');
+    canvas.width = 600; canvas.height = 500;
+    canvas.getContext('2d').drawImage(img, srcX, srcY, frameW / scale, frameH / scale, 0, 0, 600, 500);
+    const croppedUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const blob = await fetch(croppedUrl).then((r) => r.blob());
+    setFormData({ ...formData, photo: new File([blob], pendingFile?.name || 'pet.jpg', { type: 'image/jpeg' }), photoPreview: croppedUrl });
+    setShowCropModal(false);
+  };
+
+  const handleCancelCrop = () => setShowCropModal(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -101,6 +144,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -237,6 +281,34 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
         </form>
       </div>
     </div>
+
+    {showCropModal && (
+      <div className="pet-crop-overlay" onClick={handleCancelCrop}>
+        <div className="pet-crop-modal" onClick={(e) => e.stopPropagation()}>
+          <h3 className="pet-crop-title">Recortar foto</h3>
+          <p className="pet-crop-hint">Arrastra el marco para elegir qué parte mostrar</p>
+          <div
+            ref={stageRef}
+            className="pet-crop-stage"
+            onMouseMove={onStageMouseMove}
+            onMouseUp={onStageMouseUp}
+            onMouseLeave={onStageMouseUp}
+          >
+            <img src={cropPreview} alt="Preview" draggable={false} />
+            <div
+              className="pet-crop-frame"
+              style={{ left: `${tempPosition.x}%`, top: `${tempPosition.y}%`, cursor: frameDragging ? 'grabbing' : 'grab' }}
+              onMouseDown={onFrameMouseDown}
+            />
+          </div>
+          <div className="pet-crop-actions">
+            <button type="button" className="pet-crop-cancel" onClick={handleCancelCrop}>Cancelar</button>
+            <button type="button" className="pet-crop-confirm" onClick={handleConfirmCrop}>Aplicar</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

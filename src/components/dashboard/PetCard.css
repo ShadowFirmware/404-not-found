@@ -21,7 +21,7 @@
 
 .pet-card-image {
   width: 100%;
-  height: 500px;
+  aspect-ratio: 6 / 5;
   overflow: hidden;
   background-color: #f3f4f6;
   position: relative;
