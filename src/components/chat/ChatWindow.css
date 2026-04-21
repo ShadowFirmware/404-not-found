@@ -35,6 +35,30 @@
   background-color: var(--hover-color);
 }
 
+.back-to-list {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.back-to-list:hover {
+  background-color: var(--hover-color);
+}
+
+@media (max-width: 640px) {
+  .back-to-list {
+    display: flex;
+  }
+}
+
 .chat-window-info {
   display: flex;
   align-items: center;

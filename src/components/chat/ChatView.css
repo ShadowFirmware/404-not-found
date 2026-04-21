@@ -245,11 +245,10 @@
   }
 }
 
-/* Mobile: lista de conversaciones ocupa todo el ancho,
-   panel de chat se muestra encima cuando hay chat activo */
-@media (max-width: 580px) {
+/* Mobile: una sola vista a la vez, como WhatsApp */
+@media (max-width: 640px) {
   .chat-layout {
-    flex-direction: column;
+    position: relative;
   }
 
   .chat-panel-left {
@@ -257,16 +256,22 @@
     min-width: unset;
     height: 100%;
     border-right: none;
-    border-bottom: 1px solid var(--border-color);
   }
 
-  /* Ocultar lista cuando hay un chat abierto */
-  .chat-layout:has(.chat-window) .chat-panel-left {
+  .chat-panel-left.mobile-hidden {
     display: none;
   }
 
   .chat-panel-right {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
+    z-index: 10;
+    background-color: var(--background-color);
+  }
+
+  .chat-panel-right.mobile-hidden {
+    display: none;
   }
 }

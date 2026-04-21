@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, MoreVertical, Trash2, ArrowRight } from 'lucide-react';
+import { Send, MoreVertical, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import toast from 'react-hot-toast';
 import './ChatWindow.css';
@@ -150,6 +150,9 @@ const ChatWindow = () => {
     <div className="chat-window">
       {/* Header del chat */}
       <div className="chat-window-header">
+        <button className="back-to-list" onClick={() => setActiveChat(null)} aria-label="Volver">
+          <ArrowLeft size={20} />
+        </button>
         <div className="chat-window-info">
           {/* Match: mi mascota → otra mascota */}
           <div className="chat-match-avatars">

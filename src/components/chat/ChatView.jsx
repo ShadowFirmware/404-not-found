@@ -40,8 +40,8 @@ const ChatView = () => {
 
   return (
     <div className="chat-layout">
-      {/* ── Panel izquierdo: lista de conversaciones ── */}
-      <div className="chat-panel-left">
+      {/* ── Panel izquierdo: lista — oculto en móvil cuando hay chat activo ── */}
+      <div className={`chat-panel-left ${activeChat ? 'mobile-hidden' : ''}`}>
         <div className="chat-header">
           <h1>Mensajes</h1>
           <p className="chat-subtitle">
@@ -102,8 +102,8 @@ const ChatView = () => {
         </div>
       </div>
 
-      {/* ── Panel derecho: ventana de chat activa ── */}
-      <div className="chat-panel-right">
+      {/* ── Panel derecho: oculto en móvil cuando no hay chat activo ── */}
+      <div className={`chat-panel-right ${!activeChat ? 'mobile-hidden' : ''}`}>
         {activeChat ? (
           <ChatWindow />
         ) : (
