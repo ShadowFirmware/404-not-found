@@ -42,7 +42,7 @@ const ThemeSelector = () => {
           className="theme-dropdown"
           style={{
             position: 'fixed',
-            bottom: `calc(100vh - ${pos.top}px)`,
+            top: pos.top + 36,
             left: pos.left,
             width: pos.width,
           }}
