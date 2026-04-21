@@ -218,15 +218,18 @@
   }
 
   .dashboard-header {
-    padding: 12px 16px;
+    padding: 10px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
 
   .dashboard-header h1 {
-    font-size: 18px;
+    font-size: 17px;
   }
 
   .dashboard-header p {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .pet-selector {
