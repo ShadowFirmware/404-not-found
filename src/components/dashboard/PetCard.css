@@ -48,6 +48,25 @@
   animation: pulse-badge 1.8s ease-in-out infinite;
 }
 
+.distance-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 @keyframes pulse-badge {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); }
@@ -71,16 +90,6 @@
   margin: 0;
 }
 
-.pet-distance {
-  background: linear-gradient(135deg, #FF6B6B 0%, #ff8787 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-}
 
 .pet-info {
   display: flex;
@@ -259,5 +268,39 @@
   }
   50% {
     transform: scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .pet-card {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .pet-card-content {
+    padding: 16px;
+  }
+
+  .pet-name {
+    font-size: 22px;
+  }
+
+  .pet-info {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .pet-personality p {
+    font-size: 13px;
+  }
+
+  .pet-actions {
+    gap: 24px;
+    margin: 16px 0;
+  }
+
+  .action-btn {
+    width: 58px;
+    height: 58px;
   }
 }

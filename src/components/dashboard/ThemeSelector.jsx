@@ -1,11 +1,12 @@
-import { Palette } from 'lucide-react';
+import { useState } from 'react';
+import { Palette, ChevronDown } from 'lucide-react';
 import { useTheme, themes } from '../../context/ThemeContext';
 import './ThemeSelector.css';
 
 const ThemeSelector = () => {
   const { currentTheme, changeTheme } = useTheme();
+  const [open, setOpen] = useState(false);
 
-  // Configuración visual por tema: fondo y texto
   const themeVisuals = {
     normal: { bg: '#ffffff', text: '#000000' },
     dark:   { bg: '#1a1a2e', text: '#ffffff' },
@@ -17,42 +18,51 @@ const ThemeSelector = () => {
 
   const handleThemeChange = (e) => {
     changeTheme(e.target.value);
+    setOpen(false);
   };
 
   return (
     <div className="theme-selector">
-      <div className="theme-selector-header">
+      <div
+        className="theme-selector-header"
+        onClick={() => setOpen((o) => !o)}
+        style={{ cursor: 'pointer' }}
+      >
         <Palette size={18} style={{ color: active.text }} />
         <span style={{ color: active.text }}>Temas</span>
-        <div 
-          className="theme-current-indicator"
-          style={{ 
-            backgroundColor: active.text,
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            marginLeft: 'auto'
+        <ChevronDown
+          size={14}
+          style={{
+            color: active.text,
+            marginLeft: 'auto',
+            transition: 'transform 0.2s',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
         />
       </div>
-      
-      <select 
-        className="theme-select"
-        value={currentTheme}
-        onChange={handleThemeChange}
-        aria-label="Seleccionar tema"
-        style={{
-          backgroundColor: active.bg,
-          color: active.text,
-          borderColor: active.text,
-        }}
-      >
-        {Object.keys(themes).map((themeKey) => (
-          <option key={themeKey} value={themeKey}>
-            {themes[themeKey].name}
-          </option>
-        ))}
-      </select>
+
+      {open && (
+        <select
+          className="theme-select"
+          value={currentTheme}
+          onChange={handleThemeChange}
+          aria-label="Seleccionar tema"
+          autoFocus
+          onBlur={() => setOpen(false)}
+          size={Object.keys(themes).length}
+          style={{
+            backgroundColor: active.bg,
+            color: active.text,
+            borderColor: active.text,
+          }}
+        >
+          {Object.keys(themes).map((themeKey) => (
+            <option key={themeKey} value={themeKey}>
+              {themes[themeKey].name}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 };
