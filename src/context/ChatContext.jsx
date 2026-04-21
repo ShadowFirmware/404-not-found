@@ -17,11 +17,13 @@ export const useChat = () => {
 export const ChatProvider = ({ children }) => {
   const [conversations, setConversations]   = useState([]);
   const [messages, setMessages]             = useState({});
-  const [activeChat, setActiveChat]         = useState(null);
+  const [activeChat, _setActiveChat]        = useState(null);
+  const setActiveChat = (id) => { activeChatRef.current = id; _setActiveChat(id); };
   const [loadingConversations, setLoadingConversations] = useState(false);
 
   const wsRef              = useRef(null);
   const reconnectTimerRef  = useRef(null);
+  const activeChatRef      = useRef(null);
   const [wsVersion, setWsVersion] = useState(0); // incrementar fuerza reconexión
   const { isAuthenticated, user } = useAuth();
   const { connectToChat } = useSocket();
@@ -61,7 +63,16 @@ export const ChatProvider = ({ children }) => {
         unreadCount:     conv.mensajes_no_leidos     || 0,
       }));
 
-      setConversations(mapped);
+      setConversations((prev) =>
+        mapped.map((conv) => {
+          const existing = prev.find((c) => c.matchId === conv.matchId);
+          // Si el chat está activo, mantener unreadCount en 0
+          if (conv.matchId === activeChatRef.current) return { ...conv, unreadCount: 0 };
+          // Si ya teníamos la conv en memoria, conservar el mayor entre ambos
+          if (existing) return { ...conv, unreadCount: Math.max(conv.unreadCount, existing.unreadCount) };
+          return conv;
+        })
+      );
     } catch (error) {
       console.error('Error cargando conversaciones:', error);
     } finally {
