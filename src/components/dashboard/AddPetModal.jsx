@@ -187,7 +187,6 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 accept="image/*"
                 onChange={handlePhotoChange}
                 style={{ display: 'none' }}
-                required
               />
             </div>
           </div>
