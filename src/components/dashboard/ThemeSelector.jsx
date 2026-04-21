@@ -1,67 +1,44 @@
-import { useState } from 'react';
-import { Palette, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Palette, ChevronDown, Check } from 'lucide-react';
 import { useTheme, themes } from '../../context/ThemeContext';
 import './ThemeSelector.css';
 
 const ThemeSelector = () => {
   const { currentTheme, changeTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
 
-  const themeVisuals = {
-    normal: { bg: '#ffffff', text: '#000000' },
-    dark:   { bg: '#1a1a2e', text: '#ffffff' },
-    blue:   { bg: '#ffffff', text: '#3b82f6' },
-    pink:   { bg: '#ffffff', text: '#ec4899' }
-  };
-
-  const active = themeVisuals[currentTheme] || themeVisuals.normal;
-
-  const handleThemeChange = (e) => {
-    changeTheme(e.target.value);
-    setOpen(false);
-  };
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   return (
-    <div className="theme-selector">
-      <div
-        className="theme-selector-header"
-        onClick={() => setOpen((o) => !o)}
-        style={{ cursor: 'pointer' }}
-      >
-        <Palette size={18} style={{ color: active.text }} />
-        <span style={{ color: active.text }}>Temas</span>
+    <div className="theme-selector" ref={ref}>
+      <div className="theme-selector-header" onClick={() => setOpen((o) => !o)}>
+        <Palette size={18} />
+        <span>Temas</span>
         <ChevronDown
           size={14}
-          style={{
-            color: active.text,
-            marginLeft: 'auto',
-            transition: 'transform 0.2s',
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
+          style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
         />
       </div>
 
       {open && (
-        <select
-          className="theme-select"
-          value={currentTheme}
-          onChange={handleThemeChange}
-          aria-label="Seleccionar tema"
-          autoFocus
-          onBlur={() => setOpen(false)}
-          size={Object.keys(themes).length}
-          style={{
-            backgroundColor: active.bg,
-            color: active.text,
-            borderColor: active.text,
-          }}
-        >
-          {Object.keys(themes).map((themeKey) => (
-            <option key={themeKey} value={themeKey}>
-              {themes[themeKey].name}
-            </option>
+        <div className="theme-dropdown">
+          {Object.entries(themes).map(([key, theme]) => (
+            <div
+              key={key}
+              className={`theme-option ${currentTheme === key ? 'active' : ''}`}
+              onClick={() => { changeTheme(key); setOpen(false); }}
+            >
+              <div className="theme-option-dot" style={{ backgroundColor: theme.primary }} />
+              <span>{theme.name}</span>
+              {currentTheme === key && <Check size={14} style={{ marginLeft: 'auto' }} />}
+            </div>
           ))}
-        </select>
+        </div>
       )}
     </div>
   );
