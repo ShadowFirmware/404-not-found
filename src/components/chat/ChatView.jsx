@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MessageCircle } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import ChatWindow from './ChatWindow';
@@ -7,6 +7,10 @@ import './ChatView.css';
 const ChatView = () => {
   const { conversations, activeChat, setActiveChat, markAsRead } = useChat();
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    return () => setActiveChat(null);
+  }, []);
 
   const filteredConversations = conversations.filter(conv =>
     conv.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
