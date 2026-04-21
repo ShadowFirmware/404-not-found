@@ -6,17 +6,29 @@ import './ThemeSelector.css';
 const ThemeSelector = () => {
   const { currentTheme, changeTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const headerRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const handleToggle = () => {
+    if (!open && headerRef.current) {
+      const rect = headerRef.current.getBoundingClientRect();
+      setPos({ top: rect.top, left: rect.left, width: rect.width });
+    }
+    setOpen((o) => !o);
+  };
+
   return (
-    <div className="theme-selector" ref={ref}>
-      <div className="theme-selector-header" onClick={() => setOpen((o) => !o)}>
+    <div className="theme-selector" ref={containerRef}>
+      <div className="theme-selector-header" ref={headerRef} onClick={handleToggle}>
         <Palette size={18} />
         <span>Temas</span>
         <ChevronDown
@@ -26,7 +38,15 @@ const ThemeSelector = () => {
       </div>
 
       {open && (
-        <div className="theme-dropdown">
+        <div
+          className="theme-dropdown"
+          style={{
+            position: 'fixed',
+            bottom: `calc(100vh - ${pos.top}px)`,
+            left: pos.left,
+            width: pos.width,
+          }}
+        >
           {Object.entries(themes).map(([key, theme]) => (
             <div
               key={key}
