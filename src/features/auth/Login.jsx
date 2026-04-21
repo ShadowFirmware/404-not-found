@@ -4,6 +4,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import dashImage from '../../assets/images/dash.png';
+import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -50,25 +51,17 @@ const Login = () => {
 
   return (
     <div
+      className="auth-container"
       style={{
-        position: 'fixed',
-        top: 0, left: 0,
-        width: '100vw', height: '100vh',
         backgroundColor: 'black',
         backgroundImage: `linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6)),url(${dashImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: 0, padding: 0, overflow: 'hidden',
       }}
     >
-      <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h1 style={{ color: 'white', fontSize: '48px', fontWeight: '900', marginBottom: '40px', textAlign: 'center', letterSpacing: '-1px', textShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
-          INICIAR SESIÓN
-        </h1>
+      <div className="auth-box">
+        <h1 className="auth-title">INICIAR SESIÓN</h1>
 
         {error && (
           <div style={{ width: '100%', padding: '12px 16px', marginBottom: '16px', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.5)', color: '#fca5a5', fontSize: '14px', textAlign: 'center' }}>

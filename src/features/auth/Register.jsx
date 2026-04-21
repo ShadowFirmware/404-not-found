@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import dashImage from '../../assets/images/dash.png';
+import './Register.css';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -80,24 +81,16 @@ const Register = () => {
 
   return (
     <div
+      className="auth-container"
       style={{
-        position: 'fixed', top: 0, left: 0,
-        width: '100vw', height: '100vh', zIndex: 99999,
         backgroundColor: 'black',
         backgroundImage: `linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.7)),url(${dashImage})`,
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: 0, padding: 0, overflow: 'hidden',
       }}
     >
-      <div style={{ position: 'absolute', top: '40px', left: '60px' }}>
-        <span style={{ color: 'white', fontSize: '28px', fontWeight: '900', letterSpacing: '-1px' }}>PAWMATCH</span>
-      </div>
-
-      <div style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100000 }}>
-        <h1 style={{ color: 'white', fontSize: '48px', fontWeight: '900', marginBottom: '20px', textAlign: 'center', letterSpacing: '-1px', textShadow: '0 4px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>
-          CREAR CUENTA
-        </h1>
+      <div className="auth-box">
+        <span className="auth-logo">PAWMATCH</span>
+        <h1 className="auth-title">CREAR CUENTA</h1>
 
         {/* Indicador de pasos */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', width: '100%' }}>
@@ -116,7 +109,7 @@ const Register = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '18px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
+        <form onSubmit={handleSubmit} className="auth-form">
           {step === 1 && (
             <>
               <input type="text" name="nombre" placeholder="Nombre completo" value={formData.nombre} onChange={handleChange} required style={inputStyle} />
