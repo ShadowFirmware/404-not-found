@@ -124,9 +124,26 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
   };
 
   const [saving, setSaving] = useState(false);
+  const [modalErrors, setModalErrors] = useState({});
+
+  const validateModal = () => {
+    const errs = {};
+    if (!formData.name.trim() || formData.name.trim().length < 2) errs.name = 'El nombre debe tener al menos 2 caracteres';
+    else if (formData.name.trim().length > 100) errs.name = 'El nombre no puede superar 100 caracteres';
+    if (!formData.type) errs.type = 'Selecciona el tipo de mascota';
+    if (!formData.breed.trim()) errs.breed = 'La raza es obligatoria';
+    else if (formData.breed.trim().length > 50) errs.breed = 'La raza no puede superar 50 caracteres';
+    const ageNum = Number(formData.age);
+    if (formData.age === '' || formData.age === null) errs.age = 'La edad es obligatoria';
+    else if (ageNum < 0 || ageNum > 30) errs.age = 'La edad debe estar entre 0 y 30 años';
+    if (!formData.gender) errs.gender = 'Selecciona el género';
+    setModalErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateModal()) return;
     setSaving(true);
     try {
       await onSave(formData);
@@ -175,8 +192,10 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Ingresa el nombre de tu mascota"
+              maxLength={100}
               required
             />
+            {modalErrors.name && <span className="error-message">{modalErrors.name}</span>}
           </div>
 
           {/* Upload Photo */}
@@ -218,6 +237,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 </option>
               ))}
             </select>
+            {modalErrors.type && <span className="error-message">{modalErrors.type}</span>}
           </div>
 
           {/* Breed, Age and Gender */}
@@ -231,8 +251,10 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 value={formData.breed}
                 onChange={handleInputChange}
                 placeholder="Ingresa la raza"
+                maxLength={50}
                 required
               />
+              {modalErrors.breed && <span className="error-message">{modalErrors.breed}</span>}
             </div>
 
             <div className="form-group">
@@ -248,6 +270,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 max="30"
                 required
               />
+              {modalErrors.age && <span className="error-message">{modalErrors.age}</span>}
             </div>
 
             <div className="form-group">
@@ -264,6 +287,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 <option value="Hembra">Hembra</option>
                 <option value="Otro">Otro</option>
               </select>
+              {modalErrors.gender && <span className="error-message">{modalErrors.gender}</span>}
             </div>
           </div>
 

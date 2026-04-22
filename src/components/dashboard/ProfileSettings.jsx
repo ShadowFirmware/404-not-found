@@ -178,25 +178,25 @@ const ProfileSettings = () => {
             <div className="form-grid">
               <div className="form-field full-width">
                 <label htmlFor="nombre">Nombre completo</label>
-                <input type="text" id="nombre" name="nombre" value={formData.nombre} onChange={handleInputChange} placeholder="Tu nombre completo" className={errors.nombre ? 'input-error' : ''} />
+                <input type="text" id="nombre" name="nombre" value={formData.nombre} onChange={handleInputChange} placeholder="Tu nombre completo" maxLength={100} className={errors.nombre ? 'input-error' : ''} />
                 {errors.nombre && <span className="error-message">{errors.nombre}</span>}
               </div>
 
               <div className="form-field">
                 <label htmlFor="email">Email</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="tu@email.com" className={errors.email ? 'input-error' : ''} />
+                <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="tu@email.com" maxLength={254} className={errors.email ? 'input-error' : ''} />
                 {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
 
               <div className="form-field">
                 <label htmlFor="telefono">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleInputChange} placeholder="777 123 4567" className={errors.telefono ? 'input-error' : ''} />
+                <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleInputChange} placeholder="777 123 4567" maxLength={15} className={errors.telefono ? 'input-error' : ''} />
                 {errors.telefono && <span className="error-message">{errors.telefono}</span>}
               </div>
 
               <div className="form-field full-width">
                 <label htmlFor="ciudad">Ciudad</label>
-                <input type="text" id="ciudad" name="ciudad" value={formData.ciudad} onChange={handleInputChange} placeholder="Tu ciudad" className={errors.ciudad ? 'input-error' : ''} />
+                <input type="text" id="ciudad" name="ciudad" value={formData.ciudad} onChange={handleInputChange} placeholder="Tu ciudad" maxLength={100} className={errors.ciudad ? 'input-error' : ''} />
                 {errors.ciudad && <span className="error-message">{errors.ciudad}</span>}
               </div>
             </div>
@@ -207,7 +207,7 @@ const ProfileSettings = () => {
             <h2 className="section-title">Sobre Mí</h2>
             <div className="form-field">
               <label htmlFor="biografia">Cuéntanos sobre ti y tu mascota</label>
-              <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleInputChange} placeholder="Escribe algo sobre ti y tus mascotas..." rows="5" className={errors.biografia ? 'input-error' : ''} />
+              <textarea id="biografia" name="biografia" value={formData.biografia} onChange={handleInputChange} placeholder="Escribe algo sobre ti y tus mascotas..." rows="5" maxLength={500} className={errors.biografia ? 'input-error' : ''} />
               {errors.biografia && <span className="error-message">{errors.biografia}</span>}
             </div>
           </div>

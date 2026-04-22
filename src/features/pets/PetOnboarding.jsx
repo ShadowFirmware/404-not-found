@@ -123,15 +123,24 @@ const PetOnboarding = () => {
     }
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es obligatorio';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = 'El nombre no puede superar 100 caracteres';
     }
     if (!formData.petType) {
       newErrors.petType = 'Selecciona el tipo de mascota';
     }
     if (!formData.breed.trim()) {
       newErrors.breed = 'La raza es obligatoria';
+    } else if (formData.breed.trim().length > 50) {
+      newErrors.breed = 'La raza no puede superar 50 caracteres';
     }
-    if (!formData.age || formData.age <= 0) {
+    const ageNum = Number(formData.age);
+    if (!formData.age && formData.age !== 0) {
       newErrors.age = 'Por favor ingresa una edad válida';
+    } else if (ageNum < 0 || ageNum > 30) {
+      newErrors.age = 'La edad debe estar entre 0 y 30 años';
     }
     if (formData.characteristics.length === 0) {
       newErrors.characteristics = 'Selecciona al menos una característica';
@@ -331,6 +340,7 @@ const PetOnboarding = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Ej: Max"
+              maxLength={100}
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -430,6 +440,7 @@ const PetOnboarding = () => {
                 value={formData.breed}
                 onChange={handleInputChange}
                 placeholder="Ej: Labrador"
+                maxLength={50}
                 style={{
                   width: '100%',
                   padding: '12px 16px',
@@ -470,6 +481,7 @@ const PetOnboarding = () => {
                 onChange={handleInputChange}
                 placeholder="Ej: 3"
                 min="0"
+                max="30"
                 style={{
                   width: '100%',
                   padding: '12px 16px',
