@@ -33,6 +33,10 @@ const Register = () => {
       setError('El nombre debe tener al menos 2 caracteres.');
       return false;
     }
+    if (!/^[a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s'\-]+$/.test(formData.nombre.trim())) {
+      setError('El nombre solo puede contener letras, espacios y guiones.');
+      return false;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setError('Ingresa un correo electrónico válido.');
       return false;
