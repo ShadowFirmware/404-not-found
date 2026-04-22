@@ -6,7 +6,7 @@ import './ThemeSelector.css';
 const ThemeSelector = () => {
   const { currentTheme, changeTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, right: 0, width: 0 });
   const headerRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -21,7 +21,7 @@ const ThemeSelector = () => {
   const handleToggle = () => {
     if (!open && headerRef.current) {
       const rect = headerRef.current.getBoundingClientRect();
-      setPos({ top: rect.top, left: rect.left, width: rect.width });
+      setPos({ top: rect.top, right: window.innerWidth - rect.right, width: rect.width });
     }
     setOpen((o) => !o);
   };
@@ -44,8 +44,7 @@ const ThemeSelector = () => {
           style={{
             position: 'fixed',
             top: pos.top + 36,
-            left: pos.left,
-            width: pos.width,
+            right: pos.right,
           }}
         >
           {Object.entries(themes).map(([key, theme]) => (
