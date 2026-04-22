@@ -217,6 +217,14 @@
     overflow: hidden;
   }
 
+  /* Ocultar scrollbar en mobile */
+  .dashboard-content-wrapper {
+    scrollbar-width: none;
+  }
+  .dashboard-content-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
   .dashboard-header {
     padding: 10px 14px;
     position: sticky;
