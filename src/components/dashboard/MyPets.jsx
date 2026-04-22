@@ -2,9 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { petService } from '../../services/petService';
+import { authService } from '../../services/authService';
 import PetProfileCard from './PetProfileCard';
 import AddPetModal from './AddPetModal';
 import './MyPets.css';
+
+const parseUbicacion = (ubicacion) => {
+  if (!ubicacion || ubicacion === '0,0' || ubicacion === '0.0,0.0') return null;
+  try {
+    const [lat, lng] = ubicacion.split(',').map(Number);
+    return (isNaN(lat) || isNaN(lng)) ? null : { lat, lng };
+  } catch {
+    return null;
+  }
+};
 
 const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
 
@@ -59,6 +70,11 @@ const MyPets = ({ onPetChanged }) => {
       if (formData.photo) fd.append('photo', formData.photo);
 
       await petService.createPet(fd);
+
+      if (formData.location?.lat != null && formData.location?.lng != null) {
+        await authService.updateLocation(formData.location.lat, formData.location.lng);
+      }
+
       await loadPets();
       onPetChanged && onPetChanged();
       toast.success(`¡${formData.name} ha sido agregado exitosamente!`, { icon: '🎉' });
@@ -69,11 +85,13 @@ const MyPets = ({ onPetChanged }) => {
   };
 
   const handleEditPet = (pet) => {
+    const user = authService.getCurrentUser();
+    const userLocation = parseUbicacion(user?.ubicación);
     toast((t) => (
       <div style={{ textAlign: 'center' }}>
         <p style={{ margin: '0 0 12px 0', fontWeight: '600' }}>¿Editar información de {pet.name}?</p>
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-          <button onClick={() => { setSelectedPet(pet); setIsEditModalOpen(true); toast.dismiss(t.id); }}
+          <button onClick={() => { setSelectedPet({ ...pet, location: userLocation }); setIsEditModalOpen(true); toast.dismiss(t.id); }}
             style={{ padding: '8px 16px', background: '#FF6B6B', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
             Sí, editar
           </button>
@@ -98,6 +116,11 @@ const MyPets = ({ onPetChanged }) => {
       if (formData.photo) fd.append('photo', formData.photo);
 
       await petService.updatePet(selectedPet.id, fd);
+
+      if (formData.location?.lat != null && formData.location?.lng != null) {
+        await authService.updateLocation(formData.location.lat, formData.location.lng);
+      }
+
       await loadPets();
       onPetChanged && onPetChanged();
       toast.success(`¡Información de ${formData.name} actualizada!`, { icon: '✅' });
@@ -184,7 +207,12 @@ const MyPets = ({ onPetChanged }) => {
         </div>
       )}
 
-      <AddPetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddPet} />
+      <AddPetModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddPet}
+        initialData={{ location: parseUbicacion(authService.getCurrentUser()?.ubicación) }}
+      />
 
       <AddPetModal
         isOpen={isEditModalOpen}

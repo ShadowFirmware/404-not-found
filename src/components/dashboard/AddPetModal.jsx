@@ -32,7 +32,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
         breed: '',
         age: '',
         characteristics: [],
-        location: null
+        location: initialData?.location ?? null,
       });
     }
   }, [editMode, initialData, isOpen]);
