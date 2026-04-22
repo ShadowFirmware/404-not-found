@@ -108,10 +108,7 @@ const ProfileSettings = () => {
     setSaving(true);
     try {
       const payload = { ...formData };
-      if (photoFile) {
-        payload.foto_perfil = photoPreview;
-      }
-      await authService.updateProfile(payload);
+      await authService.updateProfile(payload, photoFile || null);
       setOriginal(formData);
       toast.success('¡Perfil actualizado correctamente!', { icon: '✅' });
     } catch (err) {

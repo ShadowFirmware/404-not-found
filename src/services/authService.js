@@ -45,9 +45,20 @@ export const authService = {
     return response.data;
   },
 
-  updateProfile: async (data) => {
-    const response = await api.patch('/dueños/actualizar_perfil/', data);
-    // Actualizar user en localStorage
+  updateProfile: async (data, photoFile = null) => {
+    let payload;
+    let headers = {};
+    if (photoFile) {
+      payload = new FormData();
+      Object.entries(data).forEach(([k, v]) => {
+        if (v !== null && v !== undefined) payload.append(k, v);
+      });
+      payload.append('photo', photoFile);
+      headers = { 'Content-Type': 'multipart/form-data' };
+    } else {
+      payload = data;
+    }
+    const response = await api.patch('/dueños/actualizar_perfil/', payload, { headers });
     if (response.data.user) {
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
