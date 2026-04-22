@@ -11,6 +11,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
     type: '',
     breed: '',
     age: '',
+    gender: '',
     characteristics: [],
     location: null
   });
@@ -31,6 +32,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
         type: '',
         breed: '',
         age: '',
+        gender: '',
         characteristics: [],
         location: initialData?.location ?? null,
       });
@@ -135,6 +137,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
       type: '',
       breed: '',
       age: '',
+      gender: '',
       characteristics: [],
       location: null
     });
@@ -210,7 +213,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
             </select>
           </div>
 
-          {/* Breed and Age - Two columns */}
+          {/* Breed, Age and Gender */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="breed">Raza</label>
@@ -237,6 +240,22 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 min="0"
                 required
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="gender">Género</label>
+              <select
+                id="gender"
+                name="gender"
+                value={formData.gender}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Selecciona el género</option>
+                <option value="Macho">Macho</option>
+                <option value="Hembra">Hembra</option>
+                <option value="Otro">Otro</option>
+              </select>
             </div>
           </div>
 

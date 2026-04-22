@@ -31,6 +31,7 @@ const mapFromBackend = (m) => {
     type: m.especie,
     breed: m.raza || '',
     age: m.edad,
+    gender: m.género || '',
     characteristics: m.descripción ? m.descripción.split(', ').filter(Boolean) : [],
     location: parseUbicacion(m.ubicación),
   };
@@ -66,6 +67,7 @@ const MyPets = ({ onPetChanged }) => {
       fd.append('type', formData.type);
       fd.append('breed', formData.breed);
       fd.append('age', formData.age);
+      if (formData.gender) fd.append('género', formData.gender);
       formData.characteristics.forEach((c) => fd.append('characteristics', c));
       if (formData.photo) fd.append('photo', formData.photo);
 
@@ -109,6 +111,7 @@ const MyPets = ({ onPetChanged }) => {
       fd.append('type', formData.type);
       fd.append('breed', formData.breed);
       fd.append('age', formData.age);
+      if (formData.gender) fd.append('género', formData.gender);
       formData.characteristics.forEach((c) => fd.append('characteristics', c));
       if (formData.photo) fd.append('photo', formData.photo);
 
