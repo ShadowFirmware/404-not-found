@@ -193,7 +193,7 @@ const ProfileSettings = () => {
 
               <div className="form-field">
                 <label htmlFor="telefono">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleInputChange} placeholder="+52 55 1234 5678" className={errors.telefono ? 'input-error' : ''} />
+                <input type="tel" id="telefono" name="telefono" value={formData.telefono} onChange={handleInputChange} placeholder="777 123 4567" className={errors.telefono ? 'input-error' : ''} />
                 {errors.telefono && <span className="error-message">{errors.telefono}</span>}
               </div>
 

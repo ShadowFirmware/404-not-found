@@ -73,6 +73,12 @@ const PetCard = ({ pet, onSwipe }) => {
           <div className="liked-me-badge">❤️ Ya te dio like</div>
         )}
 
+        {(pet.distance != null || pet.location) && (
+          <div className="distance-badge">
+            📍 {pet.distance != null ? `${pet.distance} km` : pet.location}
+          </div>
+        )}
+
         <motion.div className="swipe-indicator reject-indicator" style={{ opacity: rejectOpacity }}>
           <X size={60} />
         </motion.div>
@@ -84,9 +90,6 @@ const PetCard = ({ pet, onSwipe }) => {
       <div className="pet-card-content">
         <div className="pet-header">
           <h2 className="pet-name">{pet.name}</h2>
-          {pet.distance != null && (
-            <span className="pet-distance">📍 {pet.distance} km</span>
-          )}
         </div>
 
         <div className="pet-info">

@@ -30,7 +30,7 @@ const ThemeSelector = () => {
     <div className="theme-selector" ref={containerRef}>
       <div className="theme-selector-header" ref={headerRef} onClick={handleToggle}>
         <Palette size={18} />
-        <span>Temas</span>
+        <span></span>
         <ChevronDown
           size={14}
           style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
