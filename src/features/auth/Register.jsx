@@ -28,13 +28,32 @@ const Register = () => {
     setError('');
   };
 
+  const validateStep1 = () => {
+    if (!formData.nombre.trim() || formData.nombre.trim().length < 2) {
+      setError('El nombre debe tener al menos 2 caracteres.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError('Ingresa un correo electrónico válido.');
+      return false;
+    }
+    if (formData.contraseña.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
+      return false;
+    }
+    if (formData.telefono && !/^[\+]?[\d\s\-(). ]{7,20}$/.test(formData.telefono)) {
+      setError('El teléfono no tiene un formato válido.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (step === 1) {
-      if (formData.nombre && formData.email && formData.contraseña) {
-        setStep(2);
-      }
+      setError('');
+      if (validateStep1()) setStep(2);
       return;
     }
 

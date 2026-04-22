@@ -17,13 +17,11 @@ export const MatchesProvider = ({ children }) => {
     // Verificar que no exista ya en matches
     if (!matches.find(match => match.id === pet.id)) {
       setMatches([...matches, { ...pet, matchedAt: new Date().toISOString() }]);
-      console.log('Match agregado:', pet.name);
     }
   };
 
   const removeMatch = (petId) => {
     setMatches(matches.filter(match => match.id !== petId));
-    console.log('Match eliminado:', petId);
   };
 
   return (

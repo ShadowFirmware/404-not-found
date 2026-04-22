@@ -296,7 +296,7 @@ const PetOnboarding = () => {
                 <div style={{ textAlign: 'center', color: '#94a3b8' }}>
                   <Upload size={40} style={{ margin: '0 auto 12px' }} />
                   <p style={{ fontSize: '14px', fontWeight: '500' }}>Haz clic para subir una foto</p>
-                  <p style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>PNG, JPG hasta 10MB</p>
+                  <p style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>PNG, JPG hasta 5MB</p>
                 </div>
               )}
               <input

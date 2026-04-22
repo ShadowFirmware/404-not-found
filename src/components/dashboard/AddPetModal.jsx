@@ -123,10 +123,17 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
     });
   };
 
-  const handleSubmit = (e) => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
-    handleClose();
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSaving(false);
+      handleClose();
+    }
   };
 
   const handleClose = () => {
@@ -238,6 +245,7 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
                 onChange={handleInputChange}
                 placeholder="Ingresa la edad"
                 min="0"
+                max="30"
                 required
               />
             </div>
@@ -289,11 +297,11 @@ const AddPetModal = ({ isOpen, onClose, onSave, editMode = false, initialData = 
 
           {/* Modal Actions */}
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={handleClose}>
+            <button type="button" className="btn-secondary" onClick={handleClose} disabled={saving}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary">
-              {editMode ? 'Actualizar Mascota' : 'Guardar Mascota'}
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Guardando...' : editMode ? 'Actualizar Mascota' : 'Guardar Mascota'}
             </button>
           </div>
         </form>
