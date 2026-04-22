@@ -117,7 +117,7 @@
     flex-direction: row;
     padding: 0;
     gap: 0;
-    flex: 1;
+    flex: 5;
     align-items: stretch;
     overflow: hidden;
   }

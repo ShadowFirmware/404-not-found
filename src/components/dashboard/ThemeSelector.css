@@ -59,7 +59,7 @@
   flex-shrink: 0;
 }
 
-/* ── Mobile: encajar como nav-item más en la barra inferior ── */
+/* ── Mobile: un slot igual al de cualquier nav-item ── */
 @media (max-width: 640px) {
   .theme-selector {
     flex: 1;
@@ -84,6 +84,12 @@
     letter-spacing: 0.02em;
     text-transform: uppercase;
     line-height: 1.1;
+    color: var(--text-secondary);
+  }
+
+  .theme-selector-header svg:first-child {
+    width: 20px;
+    height: 20px;
   }
 
   .theme-selector-label {
