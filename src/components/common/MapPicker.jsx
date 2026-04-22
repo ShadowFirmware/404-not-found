@@ -51,19 +51,22 @@ const MapPicker = ({ initialPosition, onLocationChange, height = '400px' }) => {
   const [position, setPosition] = useState(initialPosition || defaultPosition);
   const [loading, setLoading] = useState(false);
 
-  // Actualizar posición cuando cambia el prop
+  // Actualizar posición cuando cambia el prop (ej: abrir edición de otra mascota)
   useEffect(() => {
-    if (initialPosition) {
-      setPosition(initialPosition);
-    }
-  }, [initialPosition]);
+    const next = initialPosition || defaultPosition;
+    setPosition(next);
+  }, [initialPosition]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Función para actualizar posición y notificar al padre
+  // Notificar al padre siempre que la posición cambie (incluyendo el valor inicial)
+  useEffect(() => {
+    if (onLocationChange) {
+      onLocationChange(position);
+    }
+  }, [position]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Función para actualizar posición (onLocationChange se dispara por el useEffect de arriba)
   const handlePositionChange = (newPosition) => {
     setPosition(newPosition);
-    if (onLocationChange) {
-      onLocationChange(newPosition);
-    }
   };
 
   // Obtener ubicación actual del usuario
