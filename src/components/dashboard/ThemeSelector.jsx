@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Palette, ChevronDown, Check } from 'lucide-react';
 import { useTheme, themes } from '../../context/ThemeContext';
 import './ThemeSelector.css';
@@ -8,11 +9,16 @@ const ThemeSelector = () => {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ bottom: 0, left: 0 });
   const headerRef = useRef(null);
-  const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+      if (
+        headerRef.current && !headerRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -35,7 +41,7 @@ const ThemeSelector = () => {
   };
 
   return (
-    <div className="theme-selector" ref={containerRef}>
+    <div className="theme-selector">
       <div className="theme-selector-header" ref={headerRef} onClick={handleToggle}>
         <Palette size={18} />
         <span className="theme-selector-label">Temas</span>
@@ -46,14 +52,11 @@ const ThemeSelector = () => {
         />
       </div>
 
-      {open && (
+      {open && createPortal(
         <div
+          ref={dropdownRef}
           className="theme-dropdown"
-          style={{
-            position: 'fixed',
-            bottom: pos.bottom,
-            left: pos.left,
-          }}
+          style={{ position: 'fixed', bottom: pos.bottom, left: pos.left }}
         >
           {Object.entries(themes).map(([key, theme]) => (
             <div
@@ -66,7 +69,8 @@ const ThemeSelector = () => {
               {currentTheme === key && <Check size={14} style={{ marginLeft: 'auto' }} />}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
