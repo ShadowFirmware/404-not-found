@@ -140,9 +140,12 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .my-pets-container {
-    padding: 16px;
+    padding: 14px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
   }
 
   .pets-grid {
@@ -152,5 +155,11 @@
 
   .my-pets-header h1 {
     font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .my-pets-container {
+    padding: 12px;
   }
 }

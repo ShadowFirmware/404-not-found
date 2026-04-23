@@ -225,22 +225,17 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .matches-container {
-    padding: 16px;
+    padding: 14px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
   }
 
   .matches-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .match-card-content {
-    padding: 16px;
-  }
-
-  .match-pet-name {
-    font-size: 18px;
+    gap: 14px;
   }
 
   .match-actions {
@@ -249,5 +244,19 @@
 
   .delete-btn {
     flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .matches-container {
+    padding: 12px;
+  }
+
+  .match-card-content {
+    padding: 14px;
+  }
+
+  .match-pet-name {
+    font-size: 18px;
   }
 }
