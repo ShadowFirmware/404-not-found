@@ -27,10 +27,16 @@
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
   z-index: 9999;
   overflow: hidden;
-  min-width: 160px;
+  min-width: 170px;
+  animation: theme-dropdown-in 0.15s ease-out;
+}
+
+@keyframes theme-dropdown-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .theme-option {

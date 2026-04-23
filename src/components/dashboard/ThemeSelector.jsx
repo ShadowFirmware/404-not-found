@@ -6,7 +6,7 @@ import './ThemeSelector.css';
 const ThemeSelector = () => {
   const { currentTheme, changeTheme } = useTheme();
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0, width: 0 });
+  const [pos, setPos] = useState({ bottom: 0, left: 0 });
   const headerRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -21,7 +21,15 @@ const ThemeSelector = () => {
   const handleToggle = () => {
     if (!open && headerRef.current) {
       const rect = headerRef.current.getBoundingClientRect();
-      setPos({ top: rect.top, right: window.innerWidth - rect.right, width: rect.width });
+      const dropdownWidth = 170;
+      let left = rect.left;
+      if (left + dropdownWidth > window.innerWidth - 8) {
+        left = window.innerWidth - dropdownWidth - 8;
+      }
+      setPos({
+        bottom: window.innerHeight - rect.top + 4,
+        left: Math.max(8, left),
+      });
     }
     setOpen((o) => !o);
   };
@@ -43,8 +51,8 @@ const ThemeSelector = () => {
           className="theme-dropdown"
           style={{
             position: 'fixed',
-            top: pos.top + 36,
-            right: pos.right,
+            bottom: pos.bottom,
+            left: pos.left,
           }}
         >
           {Object.entries(themes).map(([key, theme]) => (
